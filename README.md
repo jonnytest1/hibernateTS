@@ -13,6 +13,8 @@ const password = process.env.DB_PASSWORD;
 ```
 env varaibles
 
+experimentalDecorators needs to be enabled
+
 
 configure database with annotations
 ```javascript
