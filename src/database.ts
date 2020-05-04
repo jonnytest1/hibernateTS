@@ -1,9 +1,8 @@
-import { save } from './save';
+
 import { load } from './load';
 import { deleteObject } from './delete';
 import { intercept } from './intercept';
-
-
+import { save } from './save';
 
 class Database {
 
@@ -27,5 +26,4 @@ class Database {
 	public intercept = intercept.intercept;
 
 }
-
-export const database = new Database();
+module.exports = new Database();
