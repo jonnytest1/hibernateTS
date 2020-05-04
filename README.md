@@ -15,6 +15,9 @@ class TestModel{
   @column()
   randomcolumn:string
   
+  @mapping(Mappings.OneToMany,OtherModel,"reverseforeignkey")
+  othermodels:Array<OtherModel>
+  
   //...
 }
 ```
