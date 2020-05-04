@@ -17,6 +17,7 @@ env varaibles
 configure database with annotations
 ```javascript
 import {database} from "hibernatets"
+import { table } from "hibernatets/src/annotations/database-annotation"
 
 @table("test")
 class TestModel{
