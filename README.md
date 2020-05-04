@@ -1,6 +1,16 @@
 # hibernateTS
 typescript clone for hiberante/persistance API
 
+currently only support for mariadb dabases 
+
+set up with 
+const db = process.env.DB_NAME;
+const port = +process.env.DB_PORT;
+const user = process.env.DB_USER;
+const url = process.env.DB_URL;
+const password = process.env.DB_PASSWORD;
+env varaibles
+
 
 configure database with annotations
 ```javascript
