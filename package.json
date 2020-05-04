@@ -1,11 +1,14 @@
 {
-	"name": "node",
-	"version": "1.0.0",
+	"name": "hibernatets",
+	"version": "1.0.1",
 	"description": "hibernate clone for typescript",
-	"main": "",
+	"main": "src/database.ts",
 	"scripts": {},
 	"author": "jonathan heindl",
 	"license": "ISC",
+	"repository": {
+		"url": "https://github.com/jonnytest1/hibernateTS"
+	},
 	"dependencies": {
 		"dotenv": "^8.2.0",
 		"mariadb": "^2.3.1",
