@@ -1,7 +1,7 @@
 # hibernateTS
 typescript clone for hiberante/persistance API
 
-currently only support for mariadb dabases 
+currently only support for mariadb databases 
 
 set up with 
 ```javascript
@@ -37,7 +37,7 @@ class TestModel{
 }
 ```
 
-objects can then be laoded with 
+objects can then be loaded with 
 
 ```javascript
 const obj=database.load(TestModel,t=>t.randomcolumn="test"); //assignment here
