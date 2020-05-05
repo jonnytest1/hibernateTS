@@ -53,7 +53,7 @@ const obj:TestModel=await database.load(TestModel,1) // primary key
 ```
 
 
-assignemnts to loaded objects get automatically persisted and can be awaited with 
+assignments to loaded objects get automatically persisted and can be awaited with 
 ```javascript
 await database.queries(obj)
 ```
