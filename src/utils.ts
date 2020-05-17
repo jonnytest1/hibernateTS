@@ -1,29 +1,28 @@
 
-import { DataBaseConfig } from './annotations/database-config';
+import { DataBaseConfig, ColumnDefinition } from './annotations/database-config';
 import { ISaveAbleObject, ConstructorClass } from './interface/saveableobject';
 import { Mappings } from './interface/mapping-types';
 
 export function setId(object: ISaveAbleObject, id: number) {
-	object[getDBConfig(object).primary] = id;
+	object[getDBConfig(object).modelPrimary] = id;
 }
 
 
 export function getId(object: ISaveAbleObject): number {
-	return object[getDBConfig(object).primary];
+	return object[getDBConfig(object).modelPrimary];
 }
 
 
-export function shouldAddColumn(column, db: DataBaseConfig): boolean {
+export function shouldAddColumn(column: ColumnDefinition, db: DataBaseConfig): boolean {
 	if (!column) {
 		return false;
 	}
-	if (column == db.primary) {
-		//autoincrement prob
+	if (column.modelName == db.modelPrimary && column.primaryType === 'auto-increment') {
 		return false;
 
 	}
 
-	if (db.mappings[column] && db.mappings[column].type === Mappings.OneToMany) {
+	if (column.mapping && column.mapping.type === Mappings.OneToMany) {
 		//inverse mapping 
 		return false;
 	}
@@ -32,14 +31,15 @@ export function shouldAddColumn(column, db: DataBaseConfig): boolean {
 
 }
 
-export function getRepresentation(object: ISaveAbleObject) {
+export function getRepresentation(object: ISaveAbleObject): { [key: string]: any } {
 	const db = getDBConfig(object);
 
 
 	let representation = {};
-	for (let column of db.columns) {
-		if (this.shouldAddColumn(column, db)) {
-			representation[column] = object[column];
+	for (let columnName in db.columns) {
+		const column = db.columns[columnName]
+		if (shouldAddColumn(column, db)) {
+			representation[column.modelName] = object[column.modelName];
 		}
 	}
 	return representation;

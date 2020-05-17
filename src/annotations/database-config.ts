@@ -1,18 +1,27 @@
 import { Mapping } from "../interface/mapping";
 
 
+export type PrimaryType = 'auto-increment' | 'custom'
+
+export interface ColumnDefinition {
+	modelName: string
+	dbName: string
+
+	mapping?: Mapping
+
+	primaryType?: PrimaryType
+}
+
 export class DataBaseConfig {
 
 
-	primary: string;
+	modelPrimary: string;
 	table: string;
 	updates: Promise<number>[];
-	columns: string[];
-	mappings: { [key: string]: Mapping };
+	columns: { [key: string]: ColumnDefinition };
 
 	constructor() {
 		this.updates = []
-		this.columns = []
-		this.mappings = {}
+		this.columns = {}
 	}
 }
