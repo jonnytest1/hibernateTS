@@ -3,7 +3,7 @@ typescript clone for hiberante/persistance API
 
 currently only support for mariadb databases 
 
-set up with 
+set up by setting these environment variables
 ```javascript
 const db = process.env.DB_NAME;
 const port = +process.env.DB_PORT;
@@ -11,7 +11,6 @@ const user = process.env.DB_USER;
 const url = process.env.DB_URL;
 const password = process.env.DB_PASSWORD;
 ```
-env varaibles
 
 experimentalDecorators needs to be enabled
 
