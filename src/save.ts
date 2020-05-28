@@ -1,9 +1,8 @@
 
 import { getRepresentation, setId, getId, getDBConfig } from './utils';
 import { DataBaseBase } from './mariadb-base';
-import { ISaveAbleObject } from './interface/saveableobject';
 import { Mappings } from './interface/mapping-types';
-import { Mapping } from './interface/mapping';
+import { Mapping, ISaveAbleObject } from './interface/mapping';
 
 interface SaveOptions {
 	/**

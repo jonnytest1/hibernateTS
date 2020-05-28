@@ -2,8 +2,8 @@
 import { DataBaseBase } from './mariadb-base';
 import { save } from './save';
 import { getId, getDBConfig } from './utils';
-import { ISaveAbleObject } from './interface/saveableobject';
 import { Mappings } from './interface/mapping-types';
+import { ISaveAbleObject } from './interface/mapping';
 
 export function pushUpdate(obj: ISaveAbleObject, update: Promise<any>): void {
 	obj["_dbUpdates"].push(update)

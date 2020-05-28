@@ -1,7 +1,7 @@
 
 import { DataBaseConfig, ColumnDefinition } from './annotations/database-config';
-import { ISaveAbleObject, ConstructorClass } from './interface/saveableobject';
 import { Mappings } from './interface/mapping-types';
+import { ISaveAbleObject, ConstructorClass } from './interface/mapping';
 
 export function setId(object: ISaveAbleObject, id: number) {
 	object[getDBConfig(object).modelPrimary] = id;

@@ -4,8 +4,8 @@ import { getId, getDBConfig } from './utils';
 import { update, pushUpdate } from './update';
 import { save } from './save';
 import { intercept } from './intercept';
-import { ConstructorClass } from './interface/saveableobject';
 import { Mappings } from './interface/mapping-types';
+import { ConstructorClass } from './interface/mapping';
 
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number, parameters?: Array<string | number> | string, deep?: boolean): Promise<T>;
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters?: undefined, deep?: boolean): Promise<Array<T>>;
@@ -66,37 +66,22 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		const result: T = new findClass();
 
 		for (let column in db.columns) {
-			result[column] = dbResult[column];
-		}
-		intercept(result);
+			const mapping = db.columns[column].mapping;
 
-		for (let column of Object.values(db.columns)) {
-			const mapping = column.mapping;
+			result[column] = dbResult[column];
+
 			if (mapping) {
-				let obj = []
+				result[column] = [];
 				if (deep) {
 					if (mapping.type == Mappings.OneToMany) {
-						obj = await load(mapping.target, mapping.column.dbName + " = ?", [getId(result)]);
+						result[column] = await load(mapping.target, mapping.column.dbName + " = ?", [getId(result)]);
 					} else {
 						throw new Error("missing mapping")
 					}
-				} else {
-					const originalPush = obj.push;
-					obj.push = (...items: Array<any>) => {
-						items.forEach(item => {
-							item[mapping.column.modelName] = getId(result)
-						})
-						pushUpdate(result, save(items));
-						return originalPush.call(obj, ...items);
-					}
 				}
-				Object.defineProperty(result, "_" + column.modelName, {
-					value: obj,
-					enumerable: false,
-					writable: true
-				});
 			}
 		}
+		intercept(result);
 		results.push(result);
 	}
 

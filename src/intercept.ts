@@ -1,8 +1,9 @@
 
 import { update, pushUpdate } from './update';
-import { ISaveAbleObject } from './interface/saveableobject';
 import { Mappings } from './interface/mapping-types';
-import { getDBConfig } from './utils';
+import { getDBConfig, getId } from './utils';
+import { ISaveAbleObject } from './interface/mapping';
+import { save } from '.';
 
 export function intercept(object: ISaveAbleObject) {
 	Object.defineProperty(object, "_dbUpdates", {
@@ -11,18 +12,14 @@ export function intercept(object: ISaveAbleObject) {
 		configurable: false
 	});
 
-
 	const db = getDBConfig(object);
 
-
 	for (let column of Object.values(db.columns)) {
-		if (!column.mapping) {
-			Object.defineProperty(object, "_" + column.modelName, {
-				value: object[column.modelName],
-				writable: true,
-				enumerable: false
-			});
-		}
+		Object.defineProperty(object, "_" + column.modelName, {
+			value: object[column.modelName],
+			writable: true,
+			enumerable: false
+		});
 
 		const overwrites: PropertyDescriptor & ThisType<any> = {
 			get: () => {
@@ -32,8 +29,8 @@ export function intercept(object: ISaveAbleObject) {
 			enumerable: true
 		};
 		if (column.modelName !== db.modelPrimary) {
+			const mapping = column.mapping;
 			overwrites.set = (value) => {
-				const mapping = column.mapping;
 				if (mapping) {
 					if (mapping.type === Mappings.OneToMany) {
 						if (value instanceof Array) {
@@ -59,6 +56,9 @@ export function intercept(object: ISaveAbleObject) {
 				Object.defineProperty(object, column.modelName, overwrites);
 				pushUpdate(object, update(object, column.modelName, value))
 			}
+			interceptArray(object, column.modelName)
+
+
 		} else {
 			overwrites.set = (value) => {
 				throw "dont set primary"
@@ -70,5 +70,25 @@ export function intercept(object: ISaveAbleObject) {
 
 
 	}
+
+}
+
+
+function interceptArray(object: ISaveAbleObject, column: string) {
+	const mapping = getDBConfig(object).columns[column].mapping;
+	const obj = object[column];
+	if (mapping && obj instanceof Array) {
+		obj.push = new Proxy(obj.push, {
+			apply: (target, thisArg, argumentsList) => {
+				const items = argumentsList[0];
+				items.forEach(item => {
+					item[mapping.column.modelName] = getId(object)
+				})
+				pushUpdate(object, save(items));
+				return target.call(obj, items);
+			}
+		})
+	}
+
 
 }

@@ -1,8 +1,8 @@
 
 import { DataBaseConfig, PrimaryType } from './database-config';
-import { ISaveAbleObject, ConstructorClass } from '../interface/saveableobject';
 import { Mappings } from '../interface/mapping-types';
 import { getDBConfig } from '../utils';
+import { ISaveAbleObject, ConstructorClass } from '../interface/mapping';
 
 function checkPrototype(constructor: any) {
 	if (constructor.prototype.database == undefined) {
@@ -11,7 +11,8 @@ function checkPrototype(constructor: any) {
 }
 
 export function table(name: string) {
-	return function (constructor: Function) {
+	return function (constructor: new () => any) {
+		new constructor();
 		checkPrototype(constructor)
 		getDBConfig(constructor).table = name;
 	}
@@ -49,17 +50,29 @@ export interface MappingOptions {
 	lazyLoad?: boolean
 }
 
-export function mapping(type: Mappings, model: ConstructorClass<any>, key?: string, options: MappingOptions = {}): (...args) => void {
+function getColumnKey(mappingModel, model: ConstructorClass<any>, key?: string | ((t: any) => any)): string {
 	if (!key) {
-		key = getDBConfig(model).modelPrimary;
+		return mappingModel.modelPrimary;
+	} else if (typeof key == "function") {
+		const testobject = new model();
+		for (let column in mappingModel.columns) {
+			testobject[column] = column;
+		}
+		return key(testobject) as string;
 	}
+	return key;
+}
+
+export function mapping<T = any>(type: Mappings, model: ConstructorClass<T>, key?: string | ((t: T) => any), options: MappingOptions = {}): (...args) => any {
+	const mappingModel = getDBConfig(model);
+	let columnKey: string = getColumnKey(mappingModel, model, key)
+
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
 		column()(target, propertyKey, descriptor);
 		column()(new model(), key)
 
-
 		const columnDef = getDBConfig(target).columns[propertyKey];
-		const mappingColumnDef = getDBConfig(model).columns[key];
+		const mappingColumnDef = getDBConfig(model).columns[columnKey];
 		columnDef.mapping = {
 			target: model,
 			column: mappingColumnDef,

@@ -2,8 +2,8 @@
 import { getId, getDBConfig } from './utils';
 import { DataBaseBase } from './mariadb-base';
 import { load } from './load';
-import { ConstructorClass } from './interface/saveableobject';
 import { Mappings } from './interface/mapping-types';
+import { ConstructorClass } from './interface/mapping';
 
 export async function deleteFnc<T>(descriptor: ConstructorClass<T>, primaryId: number | Array<number>): Promise<number> {
 
