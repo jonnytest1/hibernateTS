@@ -79,13 +79,12 @@ function interceptArray(object: ISaveAbleObject, column: string) {
 	const obj = object[column];
 	if (mapping && obj instanceof Array) {
 		obj.push = new Proxy(obj.push, {
-			apply: (target, thisArg, argumentsList) => {
-				const items = argumentsList[0];
+			apply: (target, thisArg, items) => {
 				items.forEach(item => {
 					item[mapping.column.modelName] = getId(object)
 				})
 				pushUpdate(object, save(items));
-				return target.call(obj, items);
+				return target.call(obj, ...items);
 			}
 		})
 	}
