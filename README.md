@@ -18,7 +18,7 @@ experimentalDecorators needs to be enabled
 configure database with annotations
 ```javascript
 import {database} from "hibernatets"
-import { table } from "hibernatets/src/annotations/database-annotation"
+import { table,primary,column ,mapping } from "hibernatets"
 
 @table("test")
 class TestModel{
