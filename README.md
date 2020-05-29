@@ -29,6 +29,7 @@ class TestModel{
   @column()
   randomcolumn:string
   
+  //alternative @mapping(Mappings.OneToMany,OtherModel,o=>o.reverseforeignkey) for autocompletion
   @mapping(Mappings.OneToMany,OtherModel,"reverseforeignkey")
   othermodels:Array<OtherModel>
   
