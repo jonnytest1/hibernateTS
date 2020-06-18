@@ -1,6 +1,14 @@
 # hibernateTS
 typescript clone for hiberante/persistance API
 
+# install
+
+```
+  npm i hibernatets
+```
+
+#apis
+
 currently only support for mariadb databases 
 
 set up by setting these environment variables
