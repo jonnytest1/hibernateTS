@@ -25,7 +25,7 @@ export function column(): (...args) => void {
 		if (!db.columns[propertyKey]) {
 			db.columns[propertyKey] = {
 				modelName: propertyKey,
-				dbName: propertyKey
+				dbTableName: propertyKey
 			}
 		}
 	}

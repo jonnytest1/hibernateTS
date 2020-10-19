@@ -4,14 +4,23 @@ import { DataBaseBase } from './mariadb-base';
 import { load } from './load';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass } from './interface/mapping';
+import { remove } from '.';
+import { primary } from './annotations/database-annotation';
 
-export async function deleteFnc<T>(descriptor: ConstructorClass<T>, primaryId: number | Array<number>): Promise<number> {
+export async function deleteFnc<T>(object: any): Promise<number>
+export async function deleteFnc<T>(descriptor: ConstructorClass<T>, primaryId: number | Array<number>): Promise<number>
+export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primaryId?: number | Array<number>): Promise<number> {
+
+	const db = getDBConfig(descriptor);
+	if (!primaryId) {
+		primaryId = descriptor[db.modelPrimary];
+		descriptor = descriptor.constructor
+	}
 
 	if (typeof primaryId === 'number') {
 		primaryId = [primaryId];
 	}
 
-	const db = getDBConfig(descriptor);
 
 	let deleteCount = 0;
 
@@ -31,16 +40,22 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T>, primaryId: n
 				if (!objectToDelete[id]) {
 					throw new Error("element to delete does not exist")
 				}
-				if (mapping.type == Mappings.OneToMany) {
-					if (objectToDelete[id][column.modelName] instanceof Array) {
-						objectToDelete[id][column.modelName].forEach(subObj => {
-							toDelete.push(getId(subObj))
-						})
-					} else {
+
+				switch (mapping.type) {
+					case Mappings.OneToMany:
+						if (objectToDelete[id][column.modelName] instanceof Array) {
+							objectToDelete[id][column.modelName].forEach(subObj => {
+								toDelete.push(getId(subObj))
+							})
+						} else {
+							throw "missing implementation"
+						}
+						break;
+					case Mappings.OneToOne:
+						toDelete.push(getId(objectToDelete[id][column.modelName]))
+						break;
+					default:
 						throw "missing implementation"
-					}
-				} else {
-					throw "missing implementation"
 				}
 			}
 			if (toDelete.length) {

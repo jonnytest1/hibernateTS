@@ -4,14 +4,14 @@ import { Mappings } from './interface/mapping-types';
 import { ISaveAbleObject, ConstructorClass } from './interface/mapping';
 
 export function setId(object: ISaveAbleObject, id: number) {
-	object[getDBConfig(object).modelPrimary] = id;
+	if (object[getDBConfig(object).modelPrimary] !== id) {
+		object[getDBConfig(object).modelPrimary] = id;
+	}
 }
-
 
 export function getId(object: ISaveAbleObject): number {
 	return object[getDBConfig(object).modelPrimary];
 }
-
 
 export function shouldAddColumn(column: ColumnDefinition, db: DataBaseConfig): boolean {
 	if (!column) {
@@ -26,7 +26,10 @@ export function shouldAddColumn(column: ColumnDefinition, db: DataBaseConfig): b
 		//inverse mapping 
 		return false;
 	}
-
+	if (column.mapping && column.mapping.type === Mappings.OneToOne) {
+		//forward mapping 
+		return true;
+	}
 	return true;
 
 }

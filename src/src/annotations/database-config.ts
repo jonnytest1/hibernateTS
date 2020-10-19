@@ -5,7 +5,7 @@ export type PrimaryType = 'auto-increment' | 'custom'
 
 export interface ColumnDefinition {
 	modelName: string
-	dbName: string
+	dbTableName: string
 
 	mapping?: Mapping
 

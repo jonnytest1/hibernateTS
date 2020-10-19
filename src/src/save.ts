@@ -24,8 +24,6 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 
 	const db = getDBConfig(objects[0]);
 
-
-
 	if (!db.table) {
 		throw "missing table";
 	}
@@ -50,15 +48,17 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 
 	if (options.updateOnDuplicate) {
 		sql += ' ON DUPLICATE KEY UPDATE ' + Object.keys(getRepresentation(objects[0]))
-			.map(key => `${key} = VALUE(${key})`).join(",")
+			.map(key => `${key} = VALUES(${key})`).join(",")
 	}
 
 	const response: any = await new DataBaseBase().sqlquery(sql, params);
 
 	for (let i = 0; i < objects.length; i++) {
-		const subObj = objects[i];
-		const insertId = response.insertId + i
-		setId(subObj, insertId);
+		if (db.columns[db.modelPrimary].primaryType == "auto-increment") {
+			const subObj = objects[i];
+			const insertId = response.insertId + i
+			setId(subObj, insertId);
+		}
 	}
 
 
@@ -78,6 +78,8 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 					}
 					savingObjects.push(...subObjects)
 
+				} else if (mapping.type == Mappings.OneToOne) {
+					savingObjects.push(subObjects)
 				} else {
 					throw new Error("missing implementation")
 				}

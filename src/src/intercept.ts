@@ -4,8 +4,14 @@ import { Mappings } from './interface/mapping-types';
 import { getDBConfig, getId } from './utils';
 import { ISaveAbleObject } from './interface/mapping';
 import { save } from '.';
+import { DataBaseBase } from './mariadb-base';
 
 export function intercept(object: ISaveAbleObject) {
+
+	if (Object.getOwnPropertyDescriptor(object, "_dbUpdates")) {
+		return
+	}
+
 	Object.defineProperty(object, "_dbUpdates", {
 		enumerable: false,
 		value: [],
@@ -31,6 +37,7 @@ export function intercept(object: ISaveAbleObject) {
 		if (column.modelName !== db.modelPrimary) {
 			const mapping = column.mapping;
 			overwrites.set = (value) => {
+				let hasSaved = false;
 				if (mapping) {
 					if (mapping.type === Mappings.OneToMany) {
 						if (value instanceof Array) {
@@ -48,31 +55,40 @@ export function intercept(object: ISaveAbleObject) {
 						} else {
 							throw "wrong type for mapping"
 						}
+					} else if (mapping.type == Mappings.OneToOne) {
+						if (!(value instanceof mapping.target)) {
+							const newVal = new mapping.target();
+							for (let i in value) {
+								newVal[i] = value[i];
+							}
+							value = newVal;
+						}
+						hasSaved = true;
+						pushUpdate(object, save(value).then(async primaryKey => {
+							const sql = "UPDATE " + db.table + " SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
+							const deleteResult = await new DataBaseBase().sqlquery(sql, [primaryKey[0], getId(object)])
+						}))
+						intercept(value);
+
 					} else {
 						throw "unimplemented "
 					}
 				}
 				object["_" + column.modelName] = value;
 				Object.defineProperty(object, column.modelName, overwrites);
-				pushUpdate(object, update(object, column.modelName, value))
+				if (!hasSaved) {
+					pushUpdate(object, update(object, column.modelName, value))
+				}
 			}
 			interceptArray(object, column.modelName)
-
-
 		} else {
 			overwrites.set = (value) => {
 				throw "dont set primary"
 			}
 		}
-
 		Object.defineProperty(object, column.modelName, overwrites);
-
-
-
 	}
-
 }
-
 
 function interceptArray(object: ISaveAbleObject, column: string) {
 	const mapping = getDBConfig(object).columns[column].mapping;

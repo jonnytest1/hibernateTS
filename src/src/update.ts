@@ -17,19 +17,24 @@ export async function update(object: ISaveAbleObject, key: string, value: string
 		if (mapping.type == Mappings.OneToMany) {
 			if (value instanceof Array) {
 				const childDb = getDBConfig(mapping.target)
-				const deleteResult = await new DataBaseBase().sqlquery("DELETE FROM " + childDb.table + " WHERE " + mapping.column.dbName + " = ?", [getId(object)])
+				const deleteResult = await new DataBaseBase().sqlquery("DELETE FROM " + childDb.table + " WHERE " + mapping.column.dbTableName + " = ?", [getId(object)])
 				if (value.length > 0) {
 					const insertResults = await save(value.map(childValue => {
 						childValue[mapping.column.modelName] = getId(object);
 						return childValue;
 					}));
-
 					return insertResults.length + deleteResult.affectedRows
 				}
 				return deleteResult.affectedRows;
 			} else {
 				throw new Error("missing implementation no array for mapping")
 			}
+		} else if (mapping.type == Mappings.OneToOne) {
+			const childDb = getDBConfig(mapping.target)
+			const deleteResult = await new DataBaseBase().sqlquery("DELETE FROM " + childDb.table + " WHERE " + mapping.column.dbTableName + " = ?", [getId(object)])
+			value[mapping.column.modelName] = getId(object);
+			const insertResults = await save(value)
+			return insertResults[0]
 		} else {
 			throw new Error("missing implementation differnent mapping")
 		}

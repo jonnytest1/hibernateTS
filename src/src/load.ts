@@ -41,12 +41,12 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 			.map(column => {
 				const value = tempObj[column.modelName]
 				if (value !== undefined) {
-					sql += column.dbName + " = ?";
+					sql += column.dbTableName + " = ?";
 					params.push(value)
 				} else {
 					throw new Error("invalid value")
 				}
-				return `${column.dbName} = ?`
+				return `${column.dbTableName} = ?`
 			})
 			.join(' \nAND ');
 
@@ -62,8 +62,10 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 	const results: Array<T> = [];
 
-	for (const dbResult of dbResults) {
+	await Promise.all(dbResults.map(async dbResult => {
 		const result: T = new findClass();
+
+		result[db.modelPrimary] = dbResult[db.modelPrimary]
 
 		for (let column in db.columns) {
 			const mapping = db.columns[column].mapping;
@@ -71,10 +73,19 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 			result[column] = dbResult[column];
 
 			if (mapping) {
-				result[column] = [];
+				if (mapping.type == Mappings.OneToMany) {
+					result[column] = [];
+				}
+
 				if (deep) {
 					if (mapping.type == Mappings.OneToMany) {
-						result[column] = await load(mapping.target, mapping.column.dbName + " = ?", [getId(result)]);
+						result[column] = await load(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)]);
+					} else if (mapping.type == Mappings.OneToOne) {
+						if (dbResult[column]) {
+							const targetConfig = getDBConfig(mapping.target);
+							const results = await load(mapping.target, targetConfig.modelPrimary + " = ?", [dbResult[column]])
+							result[column] = results[0];
+						}
 					} else {
 						throw new Error("missing mapping")
 					}
@@ -83,8 +94,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		}
 		intercept(result);
 		results.push(result);
-	}
-
+	}))
 	if (typeof primaryKeyOrFilter == "string" || typeof primaryKeyOrFilter == "function") {
 		return results;
 	}

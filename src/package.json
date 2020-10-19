@@ -4,8 +4,8 @@
 	"description": "hibernate clone for typescript",
 	"main": "index.js",
 	"scripts": {
-		"p": "tsc && copyfiles ./package.json ./dist && cd dist && npm publish",
-		"build": "tsc"
+		"p": "tsc && copyfiles ./package.json ../dist && cd ../dist && npm publish",
+		"build": "tsc && copyfiles ./package.json ../dist"
 	},
 	"author": "jonathan heindl",
 	"license": "ISC",
@@ -14,10 +14,11 @@
 		"url": "https://github.com/jonnytest1/hibernateTS"
 	},
 	"dependencies": {
+		"@types/node": "^14.11.10",
 		"dotenv": "^8.2.0",
 		"mariadb": "^2.3.1",
-		"typescript": "",
-		"tslib": "1.11.1"
+		"tslib": "1.11.1",
+		"typescript": ""
 	},
 	"devDependencies": {
 		"@types/jasmine": "^3.5.10",
