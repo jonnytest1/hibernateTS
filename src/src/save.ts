@@ -85,7 +85,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 				}
 			}
 			if (savingObjects.length > 0) {
-				await save(savingObjects);
+				await save(savingObjects.filter(obj => !getId(obj)));
 			}
 
 
