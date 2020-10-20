@@ -46,7 +46,6 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<any>, db: 
     missingColumns.forEach(column => {
         needsAlter = true
         sql += " ADD COLUMN " + getColumnSQL(dbConfig, column)
-        debugger;
     })
 
     sql = sql.substr(0, sql.length - 3) + ";"
@@ -159,11 +158,22 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string) {
     } else {
         columnSql += "NOT NULL "
     }
+    if (dbConfig.modelPrimary == column && columnConfig.primaryType && columnConfig.primaryType == "auto-increment") {
+        columnSql += " AUTO_INCREMENT "
+    }
     if (colDbOpts.default) {
         columnSql += " DEFAULT " + colDbOpts.default;
     }
 
-    return columnSql + ",\r\n"
+
+
+    columnSql += ",\r\n"
+
+    if (dbConfig.modelPrimary == column && columnConfig.primaryType && columnConfig.primaryType == "auto-increment") {
+        columnSql += " ADD PRIMARY KEY (`" + columnConfig.dbTableName + "`),\r\n"
+    }
+
+    return columnSql;
 
 }
 
