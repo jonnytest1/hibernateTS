@@ -9,8 +9,8 @@ interface DatabaseResult {
 
 export class DataBaseBase {
 
-	private async query<T>(callback: (pool: mariadb.Pool) => Promise<T>): Promise<T> {
-		const db = process.env.DB_NAME;
+	private async query<T>(callback: (pool: mariadb.Pool) => Promise<T>, db_name?: string): Promise<T> {
+		const db = db_name || process.env.DB_NAME;
 		const port = +process.env.DB_PORT;
 		const user = process.env.DB_USER;
 		const url = process.env.DB_URL;
@@ -28,8 +28,8 @@ export class DataBaseBase {
 		return this.query(connection => connection.query(queryString, params));
 	}
 
-	async selectQuery<T>(queryString: string, params: Array<any> = []): Promise<Array<T>> {
-		return this.query(connection => connection.query(queryString, params));
+	async selectQuery<T>(queryString: string, params: Array<any> = [], db_name?: string): Promise<Array<T>> {
+		return this.query(connection => connection.query(queryString, params), db_name);
 	}
 
 

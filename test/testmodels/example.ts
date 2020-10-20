@@ -1,6 +1,6 @@
 import { primary, table, column } from 'hibernatets';
 
-@table("example")
+@table()
 export class TestModel {
 
 	@primary({ strategy: 'custom' })
@@ -9,6 +9,12 @@ export class TestModel {
 	@column()
 	col2
 
+	@column({ size: "medium" })
+	description
+
+
+	@column()
+	randomtext: string
 
 
 	constructor(id?, col?) {

@@ -1,4 +1,5 @@
 import { Mapping } from "../interface/mapping";
+import { DBColumn } from './database-annotation';
 
 
 export type PrimaryType = 'auto-increment' | 'custom'
@@ -9,7 +10,8 @@ export interface ColumnDefinition {
 
 	mapping?: Mapping
 
-	primaryType?: PrimaryType
+	primaryType?: PrimaryType,
+	opts?: DBColumn
 }
 
 export class DataBaseConfig {

@@ -7,11 +7,11 @@ import { deleteFnc } from 'hibernatets/delete';
 export async function testmapping() {
 
 
-	await save(new ClWithMApping())
+	const saved = await save(new ClWithMApping())
 
-	const mapping = await load(ClWithMApping, 1)
+	const mapping = await load(ClWithMApping, saved[0])
 	mapping.test2 = new TestModel("bva", "hallo")
-
+	mapping.test2.randomtext = "abc"
 	mapping.test.push(new TestModel("asd", "asdf"))
 
 	await queries(mapping);

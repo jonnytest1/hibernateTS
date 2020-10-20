@@ -1,10 +1,10 @@
 import { mapping, Mappings, primary, table } from 'hibernatets';
 import { TestModel } from './example';
 
-@table("examplemapping")
+@table()
 export class ClWithMApping {
 
-	@mapping(Mappings.OneToMany, TestModel, t => t.col2)
+	@mapping(Mappings.OneToMany, TestModel)
 	test: Array<TestModel>
 
 	@mapping(Mappings.OneToOne, TestModel, t => t.col2)
