@@ -102,6 +102,8 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<any>, db: 
                         if (dbSize == 50) {
                             needsAlter = true;
                             sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` VARCHAR(512),\r\n'
+                        } else if (dbSize == 512) {
+                            //fits
                         } else {
                             console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
                         }
@@ -130,7 +132,7 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<any>, db:
     let sql = ""
     sql += "CREATE TABLE `" + dbConfig.table + "` (\r\n"
     for (let column in dbConfig.columns) {
-        const colSql = getColumnSQL(dbConfig, column)
+        const colSql = getColumnSQL(dbConfig, column, true)
         if (colSql !== null) {
             sql += colSql;
         }
@@ -143,7 +145,7 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<any>, db:
 
 }
 
-function getColumnSQL(dbConfig: DataBaseConfig, column: string) {
+function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boolean) {
     let columnSql = ""
     const columnConfig = dbConfig.columns[column];
     const colDbOpts = columnConfig.opts;
@@ -166,6 +168,12 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string) {
                 colDbOpts.nullable = true
                 colDbOpts.default = "NULL"
             }
+        } else if (columnConfig.inverseMappingDef) {
+            const targetConf = getDBConfig(columnConfig.inverseMappingDef.target);
+            const targetColDbOpts = targetConf.columns[targetConf.modelPrimary].opts
+            colDbOpts.size = targetColDbOpts.size;
+            colDbOpts.type = targetColDbOpts.type;
+            colDbOpts.nullable = false
         } else {
             throw "unimplemented exception"
         }
@@ -239,7 +247,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string) {
 
     columnSql += ",\r\n"
 
-    if (dbConfig.modelPrimary == column && columnConfig.primaryType && columnConfig.primaryType == "auto-increment") {
+    if (dbConfig.modelPrimary == column && columnConfig.primaryType && columnConfig.primaryType == "auto-increment" && !createMOde) {
         columnSql += " ADD PRIMARY KEY (`" + columnConfig.dbTableName + "`),\r\n"
     }
 

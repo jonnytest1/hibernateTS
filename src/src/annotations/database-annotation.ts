@@ -126,11 +126,16 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T>, key
 
 		const columnDef = getDBConfig(target).columns[propertyKey];
 		const mappingColumnDef = getDBConfig(model).columns[columnKey];
+
 		columnDef.mapping = {
 			target: model,
 			column: mappingColumnDef,
 			type,
 			options: options
+		}
+
+		mappingColumnDef.inverseMappingDef = {
+			target: target,
 		}
 	}
 }

@@ -8,7 +8,11 @@ export interface ColumnDefinition {
 	modelName: string
 	dbTableName: string
 
-	mapping?: Mapping
+	mapping?: Mapping,
+
+	inverseMappingDef?: {
+		target: any
+	}
 
 	primaryType?: PrimaryType,
 	opts?: DBColumn

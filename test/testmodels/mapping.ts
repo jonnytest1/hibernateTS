@@ -1,5 +1,6 @@
 import { mapping, Mappings, primary, table } from 'hibernatets';
 import { TestModel } from './example';
+import { MappingCreate } from './mappingcreate';
 
 @table()
 export class ClWithMApping {
@@ -12,6 +13,9 @@ export class ClWithMApping {
 
 	@primary()
 	id
+
+	@mapping(Mappings.OneToOne, MappingCreate, "backref")
+	mappingcreate: Array<MappingCreate>
 
 	constructor() {
 
