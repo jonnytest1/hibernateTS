@@ -3,6 +3,7 @@ import { getRepresentation, setId, getId, getDBConfig } from './utils';
 import { DataBaseBase } from './mariadb-base';
 import { Mappings } from './interface/mapping-types';
 import { Mapping, ISaveAbleObject } from './interface/mapping';
+import { pushUpdate, update } from './update';
 
 interface SaveOptions {
 	/**
@@ -79,7 +80,9 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 					savingObjects.push(...subObjects)
 
 				} else if (mapping.type == Mappings.OneToOne) {
-					savingObjects.push(subObjects)
+					if (!getId(subObjects)) {
+						savingObjects.push(subObjects)
+					}
 				} else {
 					throw new Error("missing implementation")
 				}

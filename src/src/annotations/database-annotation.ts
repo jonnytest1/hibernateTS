@@ -1,7 +1,7 @@
 
 import { DataBaseConfig, PrimaryType } from './database-config';
 import { Mappings } from '../interface/mapping-types';
-import { getDBConfig } from '../utils';
+import { CustomOmit, getDBConfig } from '../utils';
 import { ISaveAbleObject, ConstructorClass } from '../interface/mapping';
 
 export interface DBColumn {
@@ -50,8 +50,10 @@ export function table(opts: TableOptions = {}) {
 export interface ColumnOption extends DBColumn {
 
 }
-export function column(opts: ColumnOption = {}): (...args) => void {
-	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor): void {
+
+
+export function column(opts: ColumnOption = {}): (target: ISaveAbleObject, propertyKey: string, descriptor?: PropertyDescriptor) => any {
+	return function (target: ISaveAbleObject, propertyKey: string, descriptor?: PropertyDescriptor): void {
 		checkPrototype(target.constructor)
 		const db = getDBConfig(target.constructor);
 		if (!db.columns[propertyKey]) {

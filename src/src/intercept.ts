@@ -96,6 +96,7 @@ function interceptArray(object: ISaveAbleObject, column: string) {
 	if (mapping && obj instanceof Array) {
 		obj.push = new Proxy(obj.push, {
 			apply: (target, thisArg, items) => {
+
 				items.forEach(item => {
 					item[mapping.column.modelName] = getId(object)
 				})

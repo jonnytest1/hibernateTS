@@ -6,7 +6,9 @@ export class TestModel {
 	@primary({ strategy: 'custom' })
 	id
 
-	@column()
+	@column({
+		type: 'number'
+	})
 	col2
 
 	@column({ size: "medium" })

@@ -1,16 +1,24 @@
 
 import { DataBaseBase } from './mariadb-base';
-import { getId, getDBConfig } from './utils';
+import { getId, getDBConfig, CustomOmit } from './utils';
 import { update, pushUpdate } from './update';
 import { save } from './save';
 import { intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass } from './interface/mapping';
 
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number, parameters?: Array<string | number> | string, deep?: boolean): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters?: undefined, deep?: boolean): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters?: Array<string | number> | string, deep?: boolean): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | number | ((obj: T) => any), parameters: Array<string | number> | string = [], deep: boolean = true): Promise<T | Array<T>> {
+export interface LoadOptions {
+	deep?: boolean,
+	first?: boolean
+}
+
+
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters: Array<string | number> | string, options: { first: true } & CustomOmit<LoadOptions, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number, parameters?: Array<string | number> | string, options?: LoadOptions): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters?: undefined | undefined[], options?: LoadOptions): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters?: Array<string | number> | string, options?: LoadOptions): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | number | ((obj: T) => any), parameters: Array<string | number> | string = [], options: LoadOptions = {}): Promise<T | Array<T>> {
 	const db = getDBConfig(findClass);
 	let sql = "SELECT * FROM " + db.table + " ";
 
@@ -77,7 +85,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 					result[column] = [];
 				}
 
-				if (deep) {
+				if (options && options.deep) {
 					if (mapping.type == Mappings.OneToMany) {
 						result[column] = await load(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)]);
 					} else if (mapping.type == Mappings.OneToOne) {
@@ -95,7 +103,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		intercept(result);
 		results.push(result);
 	}))
-	if (typeof primaryKeyOrFilter == "string" || typeof primaryKeyOrFilter == "function") {
+	if ((typeof primaryKeyOrFilter == "string" || typeof primaryKeyOrFilter == "function") && !(options && options.first)) {
 		return results;
 	}
 	return results[0];

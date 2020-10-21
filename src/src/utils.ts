@@ -3,6 +3,8 @@ import { DataBaseConfig, ColumnDefinition } from './annotations/database-config'
 import { Mappings } from './interface/mapping-types';
 import { ISaveAbleObject, ConstructorClass } from './interface/mapping';
 
+export type CustomOmit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
+
 export function setId(object: ISaveAbleObject, id: number) {
 	if (object[getDBConfig(object).modelPrimary] !== id) {
 		object[getDBConfig(object).modelPrimary] = id;
@@ -42,7 +44,11 @@ export function getRepresentation(object: ISaveAbleObject): { [key: string]: any
 	for (let columnName in db.columns) {
 		const column = db.columns[columnName]
 		if (shouldAddColumn(column, db)) {
-			representation[column.modelName] = object[column.modelName];
+			if (column.mapping && column.mapping.type == Mappings.OneToOne) {
+				representation[column.modelName] = getId(object[column.modelName])
+			} else {
+				representation[column.modelName] = object[column.modelName];
+			}
 		}
 	}
 	return representation;
@@ -55,3 +61,4 @@ export function getDBConfig(obj: ISaveAbleObject | ConstructorClass<any>): DataB
 	}
 	return obj.constructor.prototype.database;
 }
+

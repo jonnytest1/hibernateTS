@@ -8,5 +8,5 @@ export async function testloadbyparam() {
 	}
 	await save(objects);
 
-	await load(TestModel, m => m.col2 = "asdf")
+	const model = await load(TestModel, m => m.col2 = "asdf")
 }
