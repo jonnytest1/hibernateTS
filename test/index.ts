@@ -1,10 +1,12 @@
-import { table, load, mapping, Mappings, intercept, primary, column, save, updateDatabase } from "hibernatets"
+import { table, load, mapping, Mappings, intercept, primary, column, save } from "hibernatets"
 import { DataBaseBase } from "hibernatets/mariadb-base"
 
 import { config } from "dotenv"
 import { testDuplicate } from './test/duplicateupdate'
 import { testloadbyparam } from './test/testloadbyparam'
 import { testmapping } from './test/testmapping'
+
+import { updateDatabase } from "../src/src/db"
 config()
 
 const native = new DataBaseBase();
@@ -15,7 +17,7 @@ const native = new DataBaseBase();
 	//await native.sqlquery("DROP TABLE `examplemapping`;")
 
 	await updateDatabase(`${__dirname}/testmodels`)
-
+	return;
 	for (let testFnc of [testDuplicate, testloadbyparam, testmapping]) {
 		try {
 			await native.sqlquery("TRUNCATE TABLE `testmodel`;")

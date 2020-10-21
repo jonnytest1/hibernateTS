@@ -111,7 +111,9 @@ function getColumnKey(mappingModel, model: ConstructorClass<any>, key?: string |
 export function mapping<T = any>(type: Mappings, model: ConstructorClass<T>, key?: string | ((t: T) => any), options?: MappingOptions): (...args) => any {
 	const mappingModel = getDBConfig(model);
 	let columnKey: string = getColumnKey(mappingModel, model, key)
-
+	if (!columnKey) {
+		throw "couldnt find defined key in " + model.name + " make sure it has an annotation (column /primary/ mapping)"
+	}
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
 		if (!options) {
 			options = {

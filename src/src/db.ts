@@ -1,7 +1,7 @@
 
 import { promises } from 'fs';
 import { join } from 'path';
-import { queries } from '.';
+import { DBColumn, queries } from '.';
 import { DataBaseConfig } from './annotations/database-config';
 import { Mappings } from './interface/mapping-types';
 import { DataBaseBase } from './mariadb-base';
@@ -39,8 +39,11 @@ export async function updateDatabase(modelRootPath: string, save = true) {
 async function alterTable(dbConfig: DataBaseConfig, columnData: Array<any>, db: DataBaseBase) {
     let sql = "ALTER TABLE `" + dbConfig.table + "`\r\n"
     let needsAlter = false;
-    const missingColumns = Object.values(dbConfig.columns)
-        .map(colDEf => colDEf.dbTableName)
+
+
+    const columnNames = Object.values(dbConfig.columns)
+        .map(colDEf => colDEf.dbTableName);
+    const missingColumns = columnNames
         .filter(columName => !columnData.some(colData => colData.COLUMN_NAME == columName) && getColumnSQL(dbConfig, columName) != null);
 
     missingColumns.forEach(column => {
@@ -48,8 +51,75 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<any>, db: 
         sql += " ADD COLUMN " + getColumnSQL(dbConfig, column)
     })
 
-    sql = sql.substr(0, sql.length - 3) + ";"
+    columnNames
+        .filter(columName => columnData.some(colData => colData.COLUMN_NAME == columName) && getColumnSQL(dbConfig, columName) != null)
+        .forEach(columnName => {
+            const dbColumn = columnData.find(colData => colData.COLUMN_NAME == columnName);
+            const serverColumn = Object.values(dbConfig.columns).find(sColumn => sColumn.dbTableName === columnName)
+            if (serverColumn.opts && serverColumn.opts.size == "small") {
+                return;
+            }
 
+            const serverType = serverColumn.opts.type
+            const serverSize = serverColumn.opts.size;
+            const dbType = dbColumn.DATA_TYPE;
+            const dbSize = dbColumn.CHARACTER_MAXIMUM_LENGTH
+
+            if (serverType == "number") {
+                if (serverSize == "large") {
+                    if (dbType == "bigint") {
+                        //fits
+                    } else if (dbType == "int" || dbType == "mediumint") {
+                        needsAlter = true;
+                        sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` BIGINT,\r\n'
+                    } else {
+                        debugger;
+                    }
+                } else if (serverSize == "medium") {
+                    if (dbType == "int") {
+                        needsAlter = true;
+                        sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` MEDIUMINT,\r\n'
+                    } else {
+                        console.error(`cant handle case number medium for ${dbType},${dbSize}`)
+                    }
+                } else {
+                    console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                }
+
+            } else if (serverType == "text") {
+                if (serverSize == "large") {
+                    //medium / small are both varchar
+                    if (dbType == "varchar") {
+                        needsAlter = true;
+                        sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` TEXT,\r\n'
+                    } else if (dbType == "text") {
+                        //fits
+                    } else {
+                        console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                    }
+                } else if (serverSize == "medium") {
+                    if (dbType == "varchar") {
+                        if (dbSize == 50) {
+                            needsAlter = true;
+                            sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` VARCHAR(512),\r\n'
+                        } else {
+                            console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                        }
+                    } else {
+                        console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                    }
+                } else {
+                    console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                }
+            } else {
+                console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+            }
+
+
+
+        })
+
+    sql = sql.substr(0, sql.length - 3) + ";"
     if (needsAlter) {
         console.log(sql);
         await db.sqlquery(sql);
