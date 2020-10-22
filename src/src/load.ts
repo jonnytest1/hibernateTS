@@ -87,11 +87,11 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 				if (options && options.deep) {
 					if (mapping.type == Mappings.OneToMany) {
-						result[column] = await load(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)]);
+						result[column] = await load(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)], options);
 					} else if (mapping.type == Mappings.OneToOne) {
 						if (dbResult[column]) {
 							const targetConfig = getDBConfig(mapping.target);
-							const results = await load(mapping.target, targetConfig.modelPrimary + " = ?", [dbResult[column]])
+							const results = await load(mapping.target, targetConfig.modelPrimary + " = ?", [dbResult[column]], options)
 							result[column] = results[0];
 						}
 					} else {
