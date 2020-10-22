@@ -87,12 +87,12 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 				if (options && options.deep) {
 					if (mapping.type == Mappings.OneToMany) {
-						result[column] = await load(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)], options);
+						result[column] = await load(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)], { ...options, first: false });
 					} else if (mapping.type == Mappings.OneToOne) {
 						if (dbResult[column]) {
 							const targetConfig = getDBConfig(mapping.target);
-							const results = await load(mapping.target, targetConfig.modelPrimary + " = ?", [dbResult[column]], options)
-							result[column] = results[0];
+							const results = await load(mapping.target, targetConfig.modelPrimary + " = ?", [dbResult[column]], { ...options, first: true })
+							result[column] = results;
 						}
 					} else {
 						throw new Error("missing mapping")
