@@ -136,7 +136,6 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<any>, db:
         if (colSql !== null) {
             sql += colSql;
         }
-
     }
     sql += "	PRIMARY KEY (`" + dbConfig.modelPrimary + "`)\n"
     sql += ") COLLATE='utf8_general_ci' ENGINE=InnoDB ;"

@@ -14,7 +14,7 @@ export class ClWithMApping {
 	@primary()
 	id
 
-	@mapping(Mappings.OneToOne, MappingCreate, "backref")
+	@mapping(Mappings.OneToOne, MappingCreate)
 	mappingcreate: Array<MappingCreate>
 
 	constructor() {

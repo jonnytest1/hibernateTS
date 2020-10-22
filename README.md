@@ -25,41 +25,59 @@ experimentalDecorators needs to be enabled
 
 configure database with annotations
 ```javascript
-import {database} from "hibernatets"
-import { table,primary,column ,mapping } from "hibernatets"
+import { table,primary,column ,mapping,Mappings } from "hibernatets"
+import { OtherModel } from "./otherModel"
 
-@table("test")
+@table({
+  // can be omitted defaults to ClassName toLowercase
+  name:"testmodel"
+})
 class TestModel{
-
+  
+  // { strategy: 'custom'|'auto-increment' }
+  // custom for mapping to non auto-increment tables
   @primary()
   id:number
   
   @column()
   randomcolumn:string
   
+  // key 'reverseforeignkey' in OtherModel references primary key of current table(TestModel)
   //alternative @mapping(Mappings.OneToMany,OtherModel,o=>o.reverseforeignkey) for autocompletion
   @mapping(Mappings.OneToMany,OtherModel,"reverseforeignkey")
   othermodels:Array<OtherModel>
-  
+
+  // key 'othermodel' in current table(TestModel) references primary key of OtherModel
+  @mapping(Mappings.OneToOne,OtherModel)
+  othermodel:OtherModel
   //...
 }
 ```
 
 objects can then be loaded with 
 
-```javascript
-const obj=database.load(TestModel,t=>t.randomcolumn="test"); //assignment here
-```
-
-or 
-```javascript
-const obj:Array<TestModel>=database.load(TestModel,"`randomcolumn = ?`",\["test"]);
+```typescript
+const obj:TestModel=await load(TestModel,1) // primary key
 ```
 or
+```typescript
+import { load } from "hibernatets"
+
+const obj:Array<TestModel> = await load(TestModel,t=>t.randomcolumn="test"); //assignment here
+const obj:TestModel = await load(TestModel,t=>t.randomcolumn="test",[],{first:true}); //assignment here
+```
+or 
 ```javascript
-const obj:TestModel=await database.load(TestModel,1) // primary key
+const obj:Array<TestModel> = await load(TestModel,"randomcolumn = ?",["test"]);
+const obj:TestModel = await load(TestModel,"randomcolumn = ?",["test"],{first:true});
 ```
 
+for mappings the default is to not load nested mappings 
+this can be enabled by adding the optional "deep" parameter
+```typescript
+const obj:Array<TestModel> = await load(TestModel,"randomcolumn = ?",["test"],{ deep :true});
+const obj:TestModel = await load(TestModel,"randomcolumn = ?",["test"],{ first:true, deep :true});
+```
 
 assignments to loaded objects get automatically persisted and can be awaited with 
 ```javascript
@@ -67,9 +85,44 @@ await database.queries(obj)
 ```
 save and delete can also be done
 ```javascript
-database.delete()
-database.save()
+
+//alternative delete(Class,primary)
+database.delete(obj)
+
+// for new Objects - loaded objects autoupdate on attribute change
+database.save(obj)
 ```
+
+includes optional automatic database adjust
+column annotations have optional parameters to indicate 
+ - database type 'text' 'number'
+ - database size 'small' 'medium' 'large'
+
+
+```javascript
+import { updateDatabase,table,column } from "hibernatets"
+
+@table()
+export class TestModel {
+    
+    // creates database column with type BIGINT
+    @column({
+      type:"number"
+      size:"large"
+    })
+    example
+
+}
+```
+```javascript
+
+// creates missing tables
+// adds missing columns
+// increases column size
+// takes argument for folder with model files
+updateDatabase(`${__dirname}/testmodels`)
+```
+
 
 npm at 
 https://www.npmjs.com/package/hibernatets
