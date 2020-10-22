@@ -1,13 +1,13 @@
 # hibernateTS
 typescript clone for hiberante/persistance API
 
-# install
+# Install
 
 ```
   npm i hibernatets
 ```
 
-#apis
+# Setup
 
 currently only support for mariadb databases 
 
@@ -22,7 +22,9 @@ const password = process.env.DB_PASSWORD;
 
 experimentalDecorators needs to be enabled
 
+# Api
 
+### Models
 configure database with annotations
 ```javascript
 import { table,primary,column ,mapping,Mappings } from "hibernatets"
@@ -53,8 +55,10 @@ class TestModel{
   //...
 }
 ```
+### Functions
 
-objects can then be loaded with 
+##### Load
+objects can be loaded with 
 
 ```typescript
 const obj:TestModel=await load(TestModel,1) // primary key
@@ -78,20 +82,50 @@ this can be enabled by adding the optional "deep" parameter
 const obj:Array<TestModel> = await load(TestModel,"randomcolumn = ?",["test"],{ deep :true});
 const obj:TestModel = await load(TestModel,"randomcolumn = ?",["test"],{ first:true, deep :true});
 ```
+##### Updates
+see [Timing](#timing) if you want to await finishing of request
+```typescript
+// with @column() attribute
+const obj:TestModel = await load(TestModel,1);
+
+// automatically gets persisted to database 
+obj.attribute= "test"
+
+// with @mapping(Mappings.OneToMany) attributes
+const obj:TestModel = await load(TestModel,1);
+ 
+const newObject=new NewObject();
+// automatically gets added and persisted
+obj.attributes.push(newObject)
+
+```
+
+##### Timing
 
 assignments to loaded objects get automatically persisted and can be awaited with 
 ```javascript
+const obj=await load(TestModel,0)
+obj.attribute="test"
+//sql request not finished yet
 await database.queries(obj)
+//sql requests all finished
 ```
-save and delete can also be done
+
+##### Delete
 ```javascript
+
+
 
 //alternative delete(Class,primary)
 database.delete(obj)
-
+```
+##### Save
+```javascript
 // for new Objects - loaded objects autoupdate on attribute change
 database.save(obj)
 ```
+
+# Database Updates
 
 includes optional automatic database adjust
 column annotations have optional parameters to indicate 

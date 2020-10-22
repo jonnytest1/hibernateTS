@@ -1,4 +1,4 @@
-import { load } from 'hibernatets'
+import { load } from '../../src/src/load'
 import { TestModel } from '../testmodels/example'
 
 
