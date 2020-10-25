@@ -1,8 +1,9 @@
 import { ClWithMApping } from '../testmodels/mapping';
-import { save, load, queries, remove } from 'hibernatets';
+import { save, load, queries } from 'hibernatets';
 import { TestModel } from '../testmodels/example';
 import { updateSetAccessor } from 'typescript';
 import { deleteFnc } from 'hibernatets/delete';
+import { remove } from '../../src/src';
 
 export async function testmapping() {
 

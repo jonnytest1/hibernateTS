@@ -44,7 +44,7 @@ export function getRepresentation(object: ISaveAbleObject): { [key: string]: any
 	for (let columnName in db.columns) {
 		const column = db.columns[columnName]
 		if (shouldAddColumn(column, db)) {
-			if (column.mapping && column.mapping.type == Mappings.OneToOne) {
+			if (column.mapping && column.mapping.type == Mappings.OneToOne && object[column.modelName]) {
 				representation[column.modelName] = getId(object[column.modelName])
 			} else {
 				representation[column.modelName] = object[column.modelName];
@@ -55,7 +55,7 @@ export function getRepresentation(object: ISaveAbleObject): { [key: string]: any
 }
 
 
-export function getDBConfig(obj: ISaveAbleObject | ConstructorClass<any>): DataBaseConfig {
+export function getDBConfig<T = any>(obj: ISaveAbleObject | ConstructorClass<any> | T): DataBaseConfig<T> {
 	if ((obj as ConstructorClass<any>).prototype && (obj as ConstructorClass<any>).prototype.database) {
 		return (obj as ConstructorClass<any>).prototype.database;
 	}

@@ -52,7 +52,7 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 						}
 						break;
 					case Mappings.OneToOne:
-						toDelete.push(getId(objectToDelete[id][column.modelName]))
+						toDelete.push(getId(objectToDelete[id]))
 						break;
 					default:
 						throw "missing implementation"

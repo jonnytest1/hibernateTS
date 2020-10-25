@@ -11,4 +11,7 @@ async () => {
     const modelStr = await load(TestModel, "A = B", [], { first: true }) // typed to TestModel
 
 
+    const modelStr2 = await load(TestModel, "A = B", [], { first: true, deep: ["col2", "description"] }) // typed to TestModel
+
+
 }

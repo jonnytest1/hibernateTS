@@ -1,5 +1,6 @@
 import { save, load } from 'hibernatets';
 import { TestModel } from '../testmodels/example';
+import { ClWithMApping } from '../testmodels/mapping';
 
 export async function testloadbyparam() {
 	const objects = []
@@ -10,3 +11,4 @@ export async function testloadbyparam() {
 
 	const model = await load(TestModel, m => m.col2 = "asdf")
 }
+

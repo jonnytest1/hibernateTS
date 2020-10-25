@@ -18,7 +18,7 @@ export function intercept(object: ISaveAbleObject) {
 		configurable: false
 	});
 
-	const db = getDBConfig(object);
+	const db = getDBConfig<any>(object);
 
 	for (let column of Object.values(db.columns)) {
 		Object.defineProperty(object, "_" + column.modelName, {

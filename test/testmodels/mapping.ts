@@ -5,8 +5,8 @@ import { MappingCreate } from './mappingcreate';
 @table()
 export class ClWithMApping {
 
-	@mapping(Mappings.OneToMany, TestModel)
-	test: Array<TestModel>
+	@mapping(Mappings.OneToMany, TestModel, "clref")
+	test: Array<TestModel> = []
 
 	@mapping(Mappings.OneToOne, TestModel, t => t.col2)
 	test2: TestModel

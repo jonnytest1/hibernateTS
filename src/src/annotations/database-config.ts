@@ -18,13 +18,13 @@ export interface ColumnDefinition {
 	opts?: DBColumn
 }
 
-export class DataBaseConfig {
+export class DataBaseConfig<T = any> {
 
 
 	modelPrimary: string;
 	table: string;
 	updates: Promise<number>[];
-	columns: { [key: string]: ColumnDefinition };
+	columns: { [key in keyof T]?: ColumnDefinition };
 
 	constructor() {
 		this.updates = []

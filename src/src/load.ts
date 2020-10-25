@@ -7,19 +7,19 @@ import { intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass } from './interface/mapping';
 
-export interface LoadOptions {
-	deep?: boolean,
+export interface LoadOptions<T> {
+	deep?: boolean | Array<keyof T>,
 	first?: boolean
 }
 
 
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions, "first">): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters: Array<string | number> | string, options: { first: true } & CustomOmit<LoadOptions, "first">): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number, parameters?: Array<string | number> | string, options?: LoadOptions): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters?: undefined | undefined[], options?: LoadOptions): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters?: Array<string | number> | string, options?: LoadOptions): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | number | ((obj: T) => any), parameters: Array<string | number> | string = [], options: LoadOptions = {}): Promise<T | Array<T>> {
-	const db = getDBConfig(findClass);
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters: Array<string | number> | string, options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters?: undefined | undefined[], options?: LoadOptions<T>): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | number | ((obj: T) => any), parameters: Array<string | number> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
+	const db = getDBConfig<T>(findClass);
 	let sql = "SELECT * FROM " + db.table + " ";
 
 	sql += "WHERE ";
@@ -39,12 +39,12 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		// format :  s => s.id = +req.params.id
 		const tempObj = new findClass();
 		for (let column in db.columns) {
-			tempObj[column] = column;
+			tempObj[column] = column as any;
 		}
 		primaryKeyOrFilter(tempObj);
 
 		const previousLength = params.length;
-		sql += Object.values(db.columns)
+		sql += Object.values<any>(db.columns)
 			.filter(column => tempObj[column.modelName] !== column.modelName)
 			.map(column => {
 				const value = tempObj[column.modelName]
@@ -82,21 +82,29 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 			if (mapping) {
 				if (mapping.type == Mappings.OneToMany) {
-					result[column] = [];
+					result[column] = [] as any;
 				}
+				if (options && options.deep === true || (options.deep && typeof options.deep !== "boolean" && options.deep.includes(column as keyof T))) {
 
-				if (options && options.deep) {
+
 					if (mapping.type == Mappings.OneToMany) {
-						result[column] = await load(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)], { ...options, first: false });
+						result[column] = await load<any>(mapping.target, mapping.column.dbTableName + " = ?", [getId(result)], { ...options, first: false }) as any;
 					} else if (mapping.type == Mappings.OneToOne) {
 						if (dbResult[column]) {
 							const targetConfig = getDBConfig(mapping.target);
-							const results = await load(mapping.target, targetConfig.modelPrimary + " = ?", [dbResult[column]], { ...options, first: true })
+							const results = await load<any>(mapping.target, targetConfig.modelPrimary + " = ?", [dbResult[column]], { ...options, first: true })
 							result[column] = results;
 						}
 					} else {
 						throw new Error("missing mapping")
 					}
+				} else if (
+					options.deep &&
+					typeof options.deep !== "boolean" &&
+					!options.deep.includes(column as keyof T) &&
+					mapping.type == Mappings.OneToOne) {
+					//reset key when not loaded
+					result[column] = null;
 				}
 			}
 		}
