@@ -7,19 +7,32 @@ import { ConstructorClass } from './interface/mapping';
 import { remove } from '.';
 import { primary } from './annotations/database-annotation';
 
-export async function deleteFnc<T>(object: any): Promise<number>
-export async function deleteFnc<T>(descriptor: ConstructorClass<T>, primaryId: number | Array<number>): Promise<number>
-export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primaryId?: number | Array<number>): Promise<number> {
+
+export interface DeleteOptions {
+	deep?: boolean | Array<string>;
+}
+export async function deleteFnc<T>(object: any, opts?: DeleteOptions): Promise<number>
+export async function deleteFnc<T>(descriptor: ConstructorClass<T>, primaryId: number | Array<number>, opts?: DeleteOptions): Promise<number>
+export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primaryId?: number | Array<number> | DeleteOptions, opts: DeleteOptions = {}): Promise<number> {
 
 	const db = getDBConfig(descriptor);
+	let dletionId: Array<number> = primaryId as Array<number>
+
 	if (!primaryId) {
-		primaryId = descriptor[db.modelPrimary];
+		dletionId = descriptor[db.modelPrimary];
 		descriptor = descriptor.constructor
 	}
 
-	if (typeof primaryId === 'number') {
-		primaryId = [primaryId];
+	if (typeof primaryId == "object" && !(primaryId instanceof Array)) {
+		opts = primaryId;
+		primaryId = undefined
 	}
+
+
+	if (typeof primaryId === 'number') {
+		dletionId = [primaryId];
+	}
+
 
 
 	let deleteCount = 0;
@@ -30,7 +43,7 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 		const mapping = column.mapping;
 		if (mapping) {
 			const toDelete: Array<number> = []
-			for (const id of primaryId) {
+			for (const id of dletionId) {
 				if (typeof id !== "number") {
 					throw "invalid primary id"
 				}
@@ -45,14 +58,19 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 					case Mappings.OneToMany:
 						if (objectToDelete[id][column.modelName] instanceof Array) {
 							objectToDelete[id][column.modelName].forEach(subObj => {
-								toDelete.push(getId(subObj))
+								if (opts.deep == true || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName))) {
+									toDelete.push(getId(subObj))
+								}
 							})
 						} else {
 							throw "missing implementation"
 						}
 						break;
 					case Mappings.OneToOne:
-						toDelete.push(getId(objectToDelete[id]))
+						if (opts.deep || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName))) {
+							toDelete.push(getId(objectToDelete[id]))
+						}
+
 						break;
 					default:
 						throw "missing implementation"
@@ -67,11 +85,11 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 	let sql = `DELETE FROM ${db.table} 
 		WHERE `;
 
-	sql += primaryId.map(id => {
+	sql += dletionId.map(id => {
 		return ` ${db.modelPrimary} = ? `
 	}).join(' \nOR ');
 
-	const result = await new DataBaseBase().sqlquery(sql, primaryId);
+	const result = await new DataBaseBase().sqlquery(sql, dletionId);
 	deleteCount += result.affectedRows;
 	return deleteCount;
 }

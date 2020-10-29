@@ -72,15 +72,22 @@ const obj:TestModel = await load(TestModel,t=>t.randomcolumn="test",[],{first:tr
 ```
 or 
 ```javascript
+//!!!careful of sql injection
 const obj:Array<TestModel> = await load(TestModel,"randomcolumn = ?",["test"]);
+//!!!careful of sql injection
 const obj:TestModel = await load(TestModel,"randomcolumn = ?",["test"],{first:true});
 ```
 
 for mappings the default is to not load nested mappings 
 this can be enabled by adding the optional "deep" parameter
 ```typescript
-const obj:Array<TestModel> = await load(TestModel,"randomcolumn = ?",["test"],{ deep :true});
-const obj:TestModel = await load(TestModel,"randomcolumn = ?",["test"],{ first:true, deep :true});
+const obj:Array<TestModel> = await load(TestModel,t=>t.randomcolumn="test",[],{ deep :true});
+const obj:TestModel = await load(TestModel,t=>t.randomcolumn="test",[],{ first:true, deep :true});
+
+const obj:TestModel = await load(TestModel,t=>t.randomcolumn="test",[],{ first:true, deep :['othermodels']});  //only loads othermodels mappings
+const obj:TestModel = await load(TestModel,t=>t.randomcolumn="test",[],{ first:true, deep :{
+  othermodels:" othermodelatt = 'test'  "
+}});  //only loads othermodels with query !!!careful of sql injection
 ```
 ##### Updates
 see [Timing](#timing) if you want to await finishing of request

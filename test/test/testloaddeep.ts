@@ -40,4 +40,24 @@ export async function testloaddeep() {
     if (!model3.test2) {
         throw "didnt load oneToOne"
     }
+
+    const model4 = await load(ClWithMApping, m => m.id = cl.id, [], {
+        first: true,
+        deep: {
+            test: "col2 = 'dfgdfgdfgsfrse'"
+        }
+    })
+
+    if (model4.test.length === 2) {
+        throw "did load oneToMany"
+    }
+    if (model4.test.length === 0) {
+        throw "didnt load oneToMany"
+    }
+    if (model4.test[0].col2 !== 'dfgdfgdfgsfrse') {
+        throw "loaded wrong oneToMany"
+    }
+    if (model4.test2) {
+        throw "loaded oneToOne"
+    }
 }
