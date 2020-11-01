@@ -1,4 +1,4 @@
-import { mapping, Mappings, primary, table } from 'hibernatets';
+import { column, mapping, Mappings, primary, table } from 'hibernatets';
 import { TestModel } from './example';
 import { MappingCreate } from './mappingcreate';
 
@@ -17,7 +17,12 @@ export class ClWithMApping {
 	@mapping(Mappings.OneToOne, MappingCreate)
 	mappingcreate: Array<MappingCreate>
 
-	constructor() {
+	@column()
+	idKey
 
+	constructor(idKey?: string) {
+		if (idKey) {
+			this.idKey = idKey
+		}
 	}
 }

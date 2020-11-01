@@ -20,7 +20,6 @@ export interface ColumnDefinition {
 
 export class DataBaseConfig<T = any> {
 
-
 	modelPrimary: string;
 	table: string;
 	updates: Promise<number>[];

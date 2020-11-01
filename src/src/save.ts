@@ -1,5 +1,5 @@
 
-import { getRepresentation, setId, getId, getDBConfig } from './utils';
+import { getRepresentation, setId, getId, getDBConfig, isPersisted } from './utils';
 import { DataBaseBase } from './mariadb-base';
 import { Mappings } from './interface/mapping-types';
 import { Mapping, ISaveAbleObject } from './interface/mapping';
@@ -60,6 +60,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 			const insertId = response.insertId + i
 			setId(subObj, insertId);
 		}
+		objects[i].___persisted = true
 	}
 
 
@@ -80,7 +81,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 					savingObjects.push(...subObjects)
 
 				} else if (mapping.type == Mappings.OneToOne) {
-					if (!getId(subObjects)) {
+					if (!isPersisted(subObjects)) {
 						savingObjects.push(subObjects)
 					}
 				} else {
@@ -88,7 +89,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 				}
 			}
 			if (savingObjects.length > 0) {
-				await save(savingObjects.filter(obj => !getId(obj)));
+				await save(savingObjects.filter(obj => !isPersisted(obj)));
 			}
 
 

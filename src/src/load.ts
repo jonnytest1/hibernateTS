@@ -5,7 +5,7 @@ import { update, pushUpdate } from './update';
 import { save } from './save';
 import { intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
-import { ConstructorClass } from './interface/mapping';
+import { ConstructorClass, ISaveAbleObject } from './interface/mapping';
 
 export interface LoadOptions<T> {
 	deep?: boolean | Array<string> | { [key: string]: string },
@@ -54,7 +54,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 				} else {
 					throw new Error("invalid value")
 				}
-				return `${column.dbTableName} = ?`
+				return `\`${column.dbTableName}\` = ?`
 			})
 			.join(' \nAND ');
 
@@ -68,11 +68,10 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 	const dbResults = await new DataBaseBase().selectQuery<any>(sql, params)
 
-	const results: Array<T> = [];
+	const results: Array<T & ISaveAbleObject> = [];
 
 	await Promise.all(dbResults.map(async dbResult => {
-		const result: T = new findClass();
-
+		const result: T & ISaveAbleObject = new findClass();
 		result[db.modelPrimary] = dbResult[db.modelPrimary]
 
 		for (let column in db.columns) {
@@ -107,6 +106,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 				}
 			}
 		}
+		result.___persisted = true
 		intercept(result);
 		results.push(result);
 	}))

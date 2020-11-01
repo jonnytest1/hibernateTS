@@ -15,6 +15,11 @@ export function getId(object: ISaveAbleObject): number {
 	return object[getDBConfig(object).modelPrimary];
 }
 
+export function isPersisted(object: ISaveAbleObject): boolean {
+
+	return !!object.___persisted;
+}
+
 export function shouldAddColumn(column: ColumnDefinition, db: DataBaseConfig): boolean {
 	if (!column) {
 		return false;
@@ -45,9 +50,9 @@ export function getRepresentation(object: ISaveAbleObject): { [key: string]: any
 		const column = db.columns[columnName]
 		if (shouldAddColumn(column, db)) {
 			if (column.mapping && column.mapping.type == Mappings.OneToOne && object[column.modelName]) {
-				representation[column.modelName] = getId(object[column.modelName])
+				representation[`\`${column.modelName}\``] = getId(object[column.modelName])
 			} else {
-				representation[column.modelName] = object[column.modelName];
+				representation[`\`${column.modelName}\``] = object[column.modelName];
 			}
 		}
 	}

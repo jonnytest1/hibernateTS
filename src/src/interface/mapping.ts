@@ -18,6 +18,10 @@ export interface ISaveAbleObject {
 			database: DataBaseConfig
 		}
 	}
+
+	___persisted?: boolean
+
+
 }
 
 export interface ConstructorClass<T> {

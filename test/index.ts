@@ -8,6 +8,7 @@ import { testmapping } from './test/testmapping'
 
 import { updateDatabase } from "../src/src/db"
 import { testloaddeep } from './test/testloaddeep'
+import { testsave } from './test/testsave'
 config()
 
 const native = new DataBaseBase();
@@ -19,7 +20,7 @@ const native = new DataBaseBase();
 
 	await updateDatabase(`${__dirname}/testmodels`)
 
-	for (let testFnc of [testloaddeep, testDuplicate, testloadbyparam, testmapping]) {
+	for (let testFnc of [testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam]) {
 		try {
 			await native.sqlquery("TRUNCATE TABLE `testmodel`;")
 			await native.sqlquery("TRUNCATE TABLE `clwithmapping`;")

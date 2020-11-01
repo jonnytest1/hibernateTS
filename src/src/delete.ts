@@ -19,13 +19,14 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 	let dletionId: Array<number> = primaryId as Array<number>
 
 	if (!primaryId) {
-		dletionId = descriptor[db.modelPrimary];
+		dletionId = [descriptor[db.modelPrimary]];
 		descriptor = descriptor.constructor
 	}
 
 	if (typeof primaryId == "object" && !(primaryId instanceof Array)) {
 		opts = primaryId;
-		primaryId = undefined
+		primaryId = getId(descriptor);
+		descriptor = descriptor.constructor
 	}
 
 
@@ -48,7 +49,7 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 					throw "invalid primary id"
 				}
 				if (!objectToDelete[id]) {
-					objectToDelete[id] = await load(descriptor, id);
+					objectToDelete[id] = await load(descriptor, id, undefined, { deep: opts.deep });
 				}
 				if (!objectToDelete[id]) {
 					throw new Error("element to delete does not exist")
@@ -67,8 +68,8 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 						}
 						break;
 					case Mappings.OneToOne:
-						if (opts.deep || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName))) {
-							toDelete.push(getId(objectToDelete[id]))
+						if (objectToDelete[id][column.modelName] && (opts.deep || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName)))) {
+							toDelete.push(getId(objectToDelete[id][column.modelName]))
 						}
 
 						break;
