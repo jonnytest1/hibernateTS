@@ -22,10 +22,14 @@ const native = new DataBaseBase();
 
 	for (let testFnc of [testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam]) {
 		try {
-			await native.sqlquery("TRUNCATE TABLE `testmodel`;")
-			await native.sqlquery("TRUNCATE TABLE `clwithmapping`;")
+			await Promise.all([
+				native.sqlquery("TRUNCATE TABLE `testmodel`;"),
+				native.sqlquery("TRUNCATE TABLE `clwithmapping`;"),
+				native.sqlquery("TRUNCATE TABLE `mappingcreate`;")
+			])
 		} catch (e) {
-
+			console.error(e);
+			return;
 		}
 		console.log(testFnc.name)
 		//	await native.sqlquery("CREATE TABLE `example` (`id` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci',	`col2` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8_general_ci',	PRIMARY KEY (`id`) USING BTREE)COLLATE='utf8_general_ci'ENGINE=InnoDB;")

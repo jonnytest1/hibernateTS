@@ -68,7 +68,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 	for (let column of Object.values(db.columns)) {
 		const mapping: Mapping = column.mapping;
 		if (mapping) {
-			const savingObjects = []
+			const savingObjects: Array<{ parent?: any, subobject: any }> = []
 			for (const obj of objects) {
 				const subObjects = obj[column.modelName];
 				if (!subObjects) {
@@ -78,18 +78,22 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 					for (let subObj of subObjects) {
 						subObj[mapping.column.modelName] = getId(obj);
 					}
-					savingObjects.push(...subObjects)
+					savingObjects.push(...subObjects.map(o => ({ subobject: o })))
 
 				} else if (mapping.type == Mappings.OneToOne) {
 					if (!isPersisted(subObjects)) {
-						savingObjects.push(subObjects)
+						savingObjects.push({ subobject: subObjects, parent: obj })
 					}
 				} else {
 					throw new Error("missing implementation")
 				}
 			}
 			if (savingObjects.length > 0) {
-				await save(savingObjects.filter(obj => !isPersisted(obj)));
+				const ids = await save(savingObjects.filter(obj => !isPersisted(obj.subobject)).map(o => o.subobject));
+				if (mapping.type == Mappings.OneToOne) {
+					const sql = "UPDATE " + db.table + " SET `" + column.dbTableName + "` = ? WHERE " + db.modelPrimary + " = ?";
+					const deleteResult = await new DataBaseBase().sqlquery(sql, [ids[0], getId(savingObjects[0].parent)])
+				}
 			}
 
 

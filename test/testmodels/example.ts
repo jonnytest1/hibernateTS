@@ -1,5 +1,6 @@
-import { primary, table, column } from 'hibernatets';
-
+import { column, mapping, Mappings, primary } from '../../src/src';
+import { MappingCreate } from './mappingcreate';
+import { table } from "hibernatets"
 @table()
 export class TestModel {
 
@@ -22,6 +23,10 @@ export class TestModel {
 
 	@column({ type: "text", size: "medium" })
 	textIncTest
+
+
+	@mapping(Mappings.OneToOne, MappingCreate)
+	mappinglevel2: MappingCreate
 
 	constructor(id?, col?) {
 		this.id = id

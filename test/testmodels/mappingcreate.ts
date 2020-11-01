@@ -1,4 +1,4 @@
-import { column, primary, table } from 'hibernatets';
+import { column, mapping, Mappings, primary, table } from 'hibernatets';
 
 @table()
 export class MappingCreate {
@@ -8,4 +8,5 @@ export class MappingCreate {
 
     @column()
     value
+
 }

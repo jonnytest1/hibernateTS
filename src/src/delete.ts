@@ -46,7 +46,14 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 			const toDelete: Array<number> = []
 			for (const id of dletionId) {
 				if (typeof id !== "number") {
-					throw "invalid primary id"
+					if (typeof id == "string") {
+						objectToDelete[id] = await load(descriptor, `\`${db.columns[db.modelPrimary].dbTableName}\` = ?`, [id], { deep: opts.deep, first: true });
+						if (!objectToDelete[id]) {
+							throw new Error("element to delete does not exist")
+						}
+					} else {
+						throw "invalid primary id"
+					}
 				}
 				if (!objectToDelete[id]) {
 					objectToDelete[id] = await load(descriptor, id, undefined, { deep: opts.deep });
