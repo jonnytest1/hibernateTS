@@ -80,10 +80,10 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<any>, db: 
                         needsAlter = true;
                         sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` MEDIUMINT,\r\n'
                     } else {
-                        console.error(`cant handle case number medium for ${dbType},${dbSize}`)
+                        console.error(`cant handle case number medium for ${dbType},${dbSize} in ${dbConfig.table}`)
                     }
                 } else {
-                    console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                    console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                 }
 
             } else if (serverType == "text") {
@@ -91,30 +91,30 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<any>, db: 
                     //medium / small are both varchar
                     if (dbType == "varchar") {
                         needsAlter = true;
-                        sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` TEXT,\r\n'
+                        sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` MEDIUMTEXT,\r\n'
                     } else if (dbType == "text") {
                         //fits
                     } else {
-                        console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                        console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                     }
                 } else if (serverSize == "medium") {
                     if (dbType == "varchar") {
-                        if (dbSize == 50) {
+                        if (dbSize == 50 || dbSize == 512) {
                             needsAlter = true;
-                            sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` VARCHAR(512),\r\n'
+                            sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` VARCHAR(2048),\r\n'
                         } else if (dbSize == 512) {
                             //fits
                         } else {
-                            console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                            console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                         }
                     } else {
-                        console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                        console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                     }
                 } else {
-                    console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                    console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                 }
             } else {
-                console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize}`)
+                console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
             }
 
 
@@ -168,6 +168,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
                 colDbOpts.default = "NULL"
             }
         } else if (columnConfig.inverseMappingDef) {
+            return null;
             const targetConf = getDBConfig(columnConfig.inverseMappingDef.target);
             const targetColDbOpts = targetConf.columns[targetConf.modelPrimary].opts
             colDbOpts.size = targetColDbOpts.size;
@@ -189,11 +190,11 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
         }
 
         if (colDbOpts.size == "small") {
-            columnSql += "    VARCHAR(50) "
-        } else if (colDbOpts.size == "medium") {
             columnSql += "    VARCHAR(512) "
+        } else if (colDbOpts.size == "medium") {
+            columnSql += "    VARCHAR(2048) "
         } else if (colDbOpts.size == "large") {
-            columnSql += "    TEXT "
+            columnSql += "    MEDIUMTEXT "
         } else {
 
             debugger;
