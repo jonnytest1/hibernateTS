@@ -1,11 +1,12 @@
-
 import { promises } from 'fs';
 import { join } from 'path';
-import { DBColumn, queries } from '.';
+
 import { DataBaseConfig } from './annotations/database-config';
 import { Mappings } from './interface/mapping-types';
 import { DataBaseBase } from './mariadb-base';
 import { getDBConfig } from './utils';
+
+
 /**
  * change database to fit models
  * @param save 
@@ -138,7 +139,7 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<any>, db:
         }
     }
     sql += "	PRIMARY KEY (`" + dbConfig.modelPrimary + "`)\n"
-    sql += ") COLLATE='utf8_general_ci' ENGINE=InnoDB ;"
+    sql += ") COLLATE='utf8mb4_general_ci' ENGINE=InnoDB ;"
     console.log(sql);
     await db.sqlquery(sql);
 
