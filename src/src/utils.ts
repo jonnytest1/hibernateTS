@@ -41,7 +41,7 @@ export function shouldAddColumn(column: ColumnDefinition, db: DataBaseConfig): b
 
 }
 
-export function getRepresentation(object: ISaveAbleObject): { [key: string]: any } {
+export function getRepresentation(object: ISaveAbleObject): { [key: string]: unknown } {
 	const db = getDBConfig(object);
 
 

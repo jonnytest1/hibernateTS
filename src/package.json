@@ -1,10 +1,10 @@
 {
 	"name": "hibernatets",
-	"version": "1.0.47",
+	"version": "1.0.51",
 	"description": "hibernate clone for typescript",
 	"main": "index.js",
 	"scripts": {
-		"p": "tsc && copyfiles ./package.json ../dist && copyfiles ../README.md ../dist/README.md && cd ../dist && npm publish",
+		"p": "tsc && copyfiles ./package.json ../dist && copyfiles ../README.md ../dist/README.md && npm version patch && cd ../dist  && npm publish",
 		"build": "tsc && copyfiles ./package.json ../dist"
 	},
 	"author": "jonathan heindl",

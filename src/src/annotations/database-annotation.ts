@@ -33,6 +33,8 @@ export interface TableOptions {
 	collation?: string
 }
 
+export const tableClassess: { [key: string]: Function } = {}
+
 export function table(opts: TableOptions = {}) {
 	return function (constructor: new () => any) {
 		if (!opts.name) {
@@ -41,14 +43,26 @@ export function table(opts: TableOptions = {}) {
 		if (!opts.collation) {
 			opts.collation = "utf8mb4_general_ci"
 		}
-
+		if (opts.name.includes("'")) {
+			throw "invalid characters in name " + opts.name;
+		}
+		if (tableClassess[opts.name]) {
+			throw "duplicate table " + opts.name
+		}
+		tableClassess[opts.name] = constructor
 		new constructor();
 		checkPrototype(constructor)
 		getDBConfig(constructor).table = opts.name;
 	}
 }
 export interface ColumnOption extends DBColumn {
+	transformations?: Transformations<any>
+}
 
+export interface Transformations<T, U = any> {
+	loadFromDbToProperty: (dbData: U) => Promise<T>;
+
+	saveFromPropertyToDb: (obj: T) => Promise<U>
 }
 
 

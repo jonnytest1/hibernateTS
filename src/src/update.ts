@@ -4,15 +4,24 @@ import { save } from './save';
 import { getId, getDBConfig } from './utils';
 import { Mappings } from './interface/mapping-types';
 import { ISaveAbleObject } from './interface/mapping';
+import { ColumnOption, Transformations } from './annotations/database-annotation';
 
 export function pushUpdate(obj: ISaveAbleObject, update: Promise<any>): void {
 	obj["_dbUpdates"].push(update)
 }
 
-export async function update(object: ISaveAbleObject, key: string, value: string | number | Array<ISaveAbleObject>) {
+export async function update(object: ISaveAbleObject, key: keyof typeof object, value: string | number | Array<ISaveAbleObject>) {
 	const db = getDBConfig(object);
 
 	const mapping = db.columns[key].mapping;
+
+	if (db.columns[key].opts && "transformations" in db.columns[key].opts) {
+		const options: ColumnOption = db.columns[key].opts
+
+		value = await options.transformations.saveFromPropertyToDb(value)
+
+	}
+
 	if (mapping) {
 		if (mapping.type == Mappings.OneToMany) {
 			if (value instanceof Array) {

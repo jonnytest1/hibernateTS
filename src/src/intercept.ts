@@ -5,8 +5,10 @@ import { getDBConfig, getId } from './utils';
 import { ISaveAbleObject } from './interface/mapping';
 import { save } from '.';
 import { DataBaseBase } from './mariadb-base';
+import { ColumnOption, DBColumn } from './annotations/database-annotation';
+import { ColumnDefinition } from './annotations/database-config';
 
-export function intercept(object: ISaveAbleObject) {
+export function intercept<T>(object: ISaveAbleObject) {
 
 	if (Object.getOwnPropertyDescriptor(object, "_dbUpdates")) {
 		return
@@ -20,7 +22,8 @@ export function intercept(object: ISaveAbleObject) {
 
 	const db = getDBConfig<any>(object);
 
-	for (let column of Object.values(db.columns)) {
+	for (let col of Object.values(db.columns)) {
+		let column = col as ColumnDefinition<keyof typeof object>
 		Object.defineProperty(object, "_" + column.modelName, {
 			value: object[column.modelName],
 			writable: true,

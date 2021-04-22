@@ -3,7 +3,7 @@ import { getRepresentation, setId, getId, getDBConfig, isPersisted } from './uti
 import { DataBaseBase } from './mariadb-base';
 import { Mappings } from './interface/mapping-types';
 import { Mapping, ISaveAbleObject } from './interface/mapping';
-import { pushUpdate, update } from './update';
+import { ColumnOption } from './annotations/database-annotation';
 
 interface SaveOptions {
 	/**
@@ -38,14 +38,36 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 
 	const params = [];
 
+	const sqlArray = []
 
-	sql += objects.map(obj => {
+
+	for (let obj of objects) {
 		const saveableobject = obj;
 		let representation = getRepresentation(saveableobject);
 
-		params.push(...Object.values(representation).map(value => value === undefined ? null : value));
-		return `( ${Object.keys(representation).map(key => '?').join(",")} )`;
-	}).join(',')
+		for (let key in representation) {
+			const value = representation[key];
+			const dbKey = key.replace(/(^`)/g, "").replace(/(`$)/g, "") as keyof typeof obj
+			if (value === undefined) {
+				params.push(null);
+				continue
+			}
+			if (db.columns[dbKey].opts && "transformations" in db.columns[dbKey].opts) {
+				const columnOptions: ColumnOption = db.columns[dbKey].opts
+				if (columnOptions.transformations) {
+					params.push(await columnOptions.transformations.saveFromPropertyToDb(value))
+					continue
+				}
+			}
+			params.push(value);
+
+		}
+
+		sqlArray.push(`( ${Object.keys(representation).map(key => '?').join(",")} )`)
+	}
+
+
+	sql += sqlArray.join(',')
 
 	if (options.updateOnDuplicate) {
 		sql += ' ON DUPLICATE KEY UPDATE ' + Object.keys(getRepresentation(objects[0]))

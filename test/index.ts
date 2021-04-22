@@ -9,6 +9,7 @@ import { testmapping } from './test/testmapping'
 import { updateDatabase } from "../src/src/db"
 import { testloaddeep } from './test/testloaddeep'
 import { testsave } from './test/testsave'
+import { testDbTransformer } from './test/test-db-transformer'
 config()
 
 const native = new DataBaseBase();
@@ -20,7 +21,7 @@ const native = new DataBaseBase();
 
 	await updateDatabase(`${__dirname}/testmodels`)
 
-	for (let testFnc of [testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam]) {
+	for (let testFnc of [testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam, testDbTransformer]) {
 		try {
 			await Promise.all([
 				native.sqlquery("TRUNCATE TABLE `testmodel`;"),

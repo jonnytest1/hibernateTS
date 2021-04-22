@@ -4,8 +4,8 @@ import { DBColumn } from './database-annotation';
 
 export type PrimaryType = 'auto-increment' | 'custom'
 
-export interface ColumnDefinition {
-	modelName: string
+export interface ColumnDefinition<K = string> {
+	modelName: K
 	dbTableName: string
 
 	mapping?: Mapping,

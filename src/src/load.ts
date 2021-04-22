@@ -6,6 +6,7 @@ import { save } from './save';
 import { intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass, ISaveAbleObject } from './interface/mapping';
+import { ColumnOption, Transformations } from './annotations/database-annotation';
 
 export interface LoadOptions<T> {
 	deep?: boolean | Array<string> | { [key: string]: string },
@@ -75,9 +76,19 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		result[db.modelPrimary] = dbResult[db.modelPrimary]
 
 		for (let column in db.columns) {
+			const columnOptions: ColumnOption = db.columns[column].opts
 			const mapping = db.columns[column].mapping;
 
-			result[column] = dbResult[column];
+
+
+
+			let dbResultPropertyValue = dbResult[column];
+			if (columnOptions.transformations) {
+				const transformation: Transformations<typeof result[typeof column]> = columnOptions.transformations
+				dbResultPropertyValue = await columnOptions.transformations.loadFromDbToProperty(dbResultPropertyValue)
+			}
+
+			result[column] = dbResultPropertyValue;
 
 			if (mapping) {
 				if (mapping.type == Mappings.OneToMany) {
