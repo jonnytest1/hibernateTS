@@ -169,7 +169,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
                 colDbOpts.default = "NULL"
             }
         } else if (columnConfig.inverseMappingDef) {
-            return null;
+            // return null;
             const targetConf = getDBConfig(columnConfig.inverseMappingDef.target);
             const targetColDbOpts = targetConf.columns[targetConf.modelPrimary].opts
             colDbOpts.size = targetColDbOpts.size;
