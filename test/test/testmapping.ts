@@ -1,6 +1,6 @@
-import { ClWithMApping } from '../testmodels/mapping';
+import { ClWithMApping } from '../testmodels/cl-with-mapping';
 import { save, load, queries } from 'hibernatets';
-import { TestModel } from '../testmodels/example';
+import { TestModel } from '../testmodels/test-model';
 import { updateSetAccessor } from 'typescript';
 import { deleteFnc } from 'hibernatets/delete';
 import { remove } from '../../src/src';

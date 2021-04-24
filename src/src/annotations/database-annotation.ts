@@ -1,5 +1,5 @@
 
-import { DataBaseConfig, PrimaryType } from './database-config';
+import { ColumnDefinition, DataBaseConfig, PrimaryType } from './database-config';
 import { Mappings } from '../interface/mapping-types';
 import { CustomOmit, getDBConfig } from '../utils';
 import { ISaveAbleObject, ConstructorClass } from '../interface/mapping';
@@ -140,7 +140,7 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T>, key
 		column(options)(new model(), columnKey)
 
 		const columnDef = getDBConfig(target).columns[propertyKey];
-		const mappingColumnDef = getDBConfig(model).columns[columnKey];
+		const mappingColumnDef: ColumnDefinition = getDBConfig(model).columns[columnKey];
 
 		columnDef.mapping = {
 			target: model,
@@ -148,10 +148,14 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T>, key
 			type,
 			options: options
 		}
-
-		mappingColumnDef.inverseMappingDef = {
-			target: target,
+		if (!mappingColumnDef.inverseMappingDef) {
+			mappingColumnDef.inverseMappingDef = []
 		}
+
+		mappingColumnDef.inverseMappingDef.push({
+			target: target,
+			targetColumn: propertyKey
+		})
 	}
 }
 

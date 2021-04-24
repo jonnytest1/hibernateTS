@@ -156,6 +156,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
     if (colDbOpts.nullable == undefined) {
         colDbOpts.nullable = true
     }
+
     if (colDbOpts.type == "binding") {
         if (columnConfig.mapping) {
             if (columnConfig.mapping.type == Mappings.OneToMany) {
@@ -169,12 +170,39 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
                 colDbOpts.default = "NULL"
             }
         } else if (columnConfig.inverseMappingDef) {
+            const hasOneToOneMapping = columnConfig.inverseMappingDef.some(mappingDef => {
+                const targetConf = getDBConfig(mappingDef.target);
+
+                for (let column in targetConf.columns) {
+                    if (targetConf.columns[column].mapping) {
+                        const mapping = targetConf.columns[column].mapping
+                        const backwardConf = getDBConfig(mapping.target)
+                        if (mapping.type == Mappings.OneToOne && backwardConf.table == dbConfig.table) {
+                            return true;
+                        }
+                    }
+                }
+                return false
+            })
+
+            for (let mappingDefIndex = 0; mappingDefIndex < columnConfig.inverseMappingDef.length; mappingDefIndex++) {
+                const mappingDef = columnConfig.inverseMappingDef[mappingDefIndex]
+                const targetConf = getDBConfig(mappingDef.target);
+                const targetColDbOpts = targetConf.columns[targetConf.modelPrimary].opts
+
+                if (mappingDefIndex > 0) {
+                    if (colDbOpts.size != targetColDbOpts.size || colDbOpts.type != targetColDbOpts.type) {
+                        throw new Error("multiple mappings with different type or size")
+                    }
+                }
+
+                colDbOpts.size = targetColDbOpts.size;
+                colDbOpts.nullable = hasOneToOneMapping
+                colDbOpts.type = targetColDbOpts.type;
+            }
+
+
             // return null;
-            const targetConf = getDBConfig(columnConfig.inverseMappingDef.target);
-            const targetColDbOpts = targetConf.columns[targetConf.modelPrimary].opts
-            colDbOpts.size = targetColDbOpts.size;
-            colDbOpts.type = targetColDbOpts.type;
-            colDbOpts.nullable = false
         } else {
             throw "unimplemented exception"
         }

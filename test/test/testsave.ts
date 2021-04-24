@@ -1,7 +1,7 @@
 
 import { save, load, queries } from '../../src/src';
-import { TestModel } from '../testmodels/example';
-import { ClWithMApping } from '../testmodels/mapping';
+import { TestModel } from '../testmodels/test-model';
+import { ClWithMApping } from '../testmodels/cl-with-mapping';
 import { MappingCreate } from '../testmodels/mappingcreate';
 
 export async function testsave() {

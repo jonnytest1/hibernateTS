@@ -1,6 +1,6 @@
 import { load, queries, save } from '../../src/src';
-import { TestModel } from '../testmodels/example';
-import { ClWithMApping } from '../testmodels/mapping';
+import { TestModel } from '../testmodels/test-model';
+import { ClWithMApping } from '../testmodels/cl-with-mapping';
 
 export async function testloaddeep() {
 

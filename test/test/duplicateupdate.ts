@@ -1,5 +1,5 @@
 import { save } from 'hibernatets';
-import { TestModel } from '../testmodels/example';
+import { TestModel } from '../testmodels/test-model';
 
 export async function testDuplicate() {
 	const objects = []

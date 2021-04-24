@@ -1,5 +1,5 @@
 import { load } from '../../src/src/load'
-import { TestModel } from '../testmodels/example'
+import { TestModel } from '../testmodels/test-model'
 
 
 async () => {

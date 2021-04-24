@@ -1,7 +1,8 @@
-import { column, mapping, Mappings, primary, table } from 'hibernatets';
-import { TestModel } from './example';
-import { MappingCreate } from './mappingcreate';
 
+import { column, mapping, Mappings, primary, table } from '../../src/src';
+import { TestModel } from './test-model';
+import { MappingCreate } from './mappingcreate';
+// from "hibernatets"
 @table()
 export class ClWithMApping {
 

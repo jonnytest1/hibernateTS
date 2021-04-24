@@ -10,9 +10,10 @@ export interface ColumnDefinition<K = string> {
 
 	mapping?: Mapping,
 
-	inverseMappingDef?: {
-		target: any
-	}
+	inverseMappingDef?: Array<{
+		target: any,
+		targetColumn: string
+	}>
 
 	primaryType?: PrimaryType,
 	opts?: DBColumn
