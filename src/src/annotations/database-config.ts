@@ -1,4 +1,5 @@
 import { Mapping } from "../interface/mapping";
+import { Mappings } from '../interface/mapping-types';
 import { DBColumn } from './database-annotation';
 
 
@@ -12,7 +13,8 @@ export interface ColumnDefinition<K = string> {
 
 	inverseMappingDef?: Array<{
 		target: any,
-		targetColumn: string
+		targetColumn: string,
+		inverseMappingType: Mappings
 	}>
 
 	primaryType?: PrimaryType,
