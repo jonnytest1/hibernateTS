@@ -13,6 +13,7 @@ export interface DBColumn {
 
 	nullable?: boolean,
 	default?: string
+
 }
 
 
@@ -154,7 +155,8 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T>, key
 
 		mappingColumnDef.inverseMappingDef.push({
 			target: target,
-			targetColumn: propertyKey
+			targetColumn: propertyKey,
+			inverseMappingType: type
 		})
 	}
 }

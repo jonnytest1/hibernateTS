@@ -198,10 +198,10 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
 
                 colDbOpts.size = targetColDbOpts.size;
                 colDbOpts.nullable = hasOneToOneMapping
-                colDbOpts.type = targetColDbOpts.type;
+                if (mappingDef.inverseMappingType == Mappings.OneToOne) {
+                    colDbOpts.type = targetColDbOpts.type;
+                }
             }
-
-
             // return null;
         } else {
             throw "unimplemented exception"
@@ -255,6 +255,8 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
             } else {
                 debugger;
             }
+        } else if (columnConfig.inverseMappingDef && columnConfig.inverseMappingDef.every(def => def.inverseMappingType === Mappings.OneToMany)) {
+            return null;
         } else {
             throw "unimplemented exception"
         }
