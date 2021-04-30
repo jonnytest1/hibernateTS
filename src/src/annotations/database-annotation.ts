@@ -127,9 +127,9 @@ function getColumnKey(mappingModel, model: ConstructorClass<any>, key?: string |
 
 
 
-export function mapping<T>(type: Mappings.OneToOne, model: ConstructorClass<T> | Promise<any>, key?: string | ((t: T) => any), options?: MappingOptions)
-export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T> | Promise<any>, key: string | ((t: T) => any), options?: MappingOptions)
-export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Promise<any>, key?: string | ((t: T) => any), options?: MappingOptions): (...args) => any {
+export function mapping<T>(type: Mappings.OneToOne, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options?: MappingOptions)
+export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key: string | ((t: T) => any), options?: MappingOptions)
+export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options?: MappingOptions): (...args) => any {
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
 		setTimeout(async () => {
 			let m: ConstructorClass<T> = await model;

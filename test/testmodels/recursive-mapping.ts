@@ -8,9 +8,7 @@ export class RecursiveMapping {
     @primary()
     id: number
 
-    @mapping(Mappings.OneToOne, (import("./test-model").then(i => {
-        return i.TestModel;
-    })))
-    //@ts-ignore
+    @mapping(Mappings.OneToOne, import("./test-model").then(i => i.TestModel))
+
     backwardsMapping: TestModelRef
 }
