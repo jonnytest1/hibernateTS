@@ -10,6 +10,7 @@ import { updateDatabase } from "../src/src/db"
 import { testloaddeep } from './test/testloaddeep'
 import { testsave } from './test/testsave'
 import { testDbTransformer } from './test/test-db-transformer'
+import { testRecursiveMappings } from './test/test-recurisve-mappings'
 config()
 
 const native = new DataBaseBase();
@@ -18,15 +19,26 @@ const native = new DataBaseBase();
 
 	//await native.sqlquery("DROP TABLE `example`;")
 	//await native.sqlquery("DROP TABLE `examplemapping`;")
+	await native.selectQuery<any>("ALTER TABLE `recursivemapping` DROP COLUMN IF EXISTS `testmodelRef`")
 
 	await updateDatabase(`${__dirname}/testmodels`)
+	const columns = await native.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["testmodel"], "information_schema")
+	const recursivemappingColumns = await native.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["recursivemapping"], "information_schema")
 
-	for (let testFnc of [testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam, testDbTransformer]) {
+	if (columns.some(c => c.COLUMN_NAME == "recursiveMappings")) {
+		await native.selectQuery<any>("ALTER TABLE `testmodel` DROP COLUMN `recursiveMappings`")
+		throw "created OneToMany COlumn in source table"
+	}
+	if (!recursivemappingColumns.some(c => c.COLUMN_NAME == "testmodelRef")) {
+		throw "didnt create inverse mapp column in target table"
+	}
+	for (let testFnc of [testRecursiveMappings, testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam, testDbTransformer]) {
 		try {
 			await Promise.all([
 				native.sqlquery("TRUNCATE TABLE `testmodel`;"),
 				native.sqlquery("TRUNCATE TABLE `clwithmapping`;"),
-				native.sqlquery("TRUNCATE TABLE `mappingcreate`;")
+				native.sqlquery("TRUNCATE TABLE `mappingcreate`;"),
+				native.sqlquery("TRUNCATE TABLE `recursivemapping`;")
 			])
 		} catch (e) {
 			console.error(e);

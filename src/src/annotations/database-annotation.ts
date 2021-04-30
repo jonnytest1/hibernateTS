@@ -3,6 +3,7 @@ import { ColumnDefinition, DataBaseConfig, PrimaryType } from './database-config
 import { Mappings } from '../interface/mapping-types';
 import { CustomOmit, getDBConfig } from '../utils';
 import { ISaveAbleObject, ConstructorClass } from '../interface/mapping';
+import { isFunction } from 'util';
 
 export interface DBColumn {
 	/**
@@ -122,42 +123,51 @@ function getColumnKey(mappingModel, model: ConstructorClass<any>, key?: string |
 	}
 	return key;
 }
-export function mapping<T>(type: Mappings.OneToOne, model: ConstructorClass<T>, key?: string | ((t: T) => any), options?: MappingOptions)
-export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T>, key: string | ((t: T) => any), options?: MappingOptions)
-export function mapping<T = any>(type: Mappings, model: ConstructorClass<T>, key?: string | ((t: T) => any), options?: MappingOptions): (...args) => any {
-	const mappingModel = getDBConfig(model);
-	let columnKey: string = getColumnKey(mappingModel, model, key)
-	if (!columnKey) {
-		throw "couldnt find defined key in " + model.name + " make sure it has an annotation (column /primary/ mapping)"
-	}
+
+
+
+
+export function mapping<T>(type: Mappings.OneToOne, model: ConstructorClass<T> | Promise<any>, key?: string | ((t: T) => any), options?: MappingOptions)
+export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T> | Promise<any>, key: string | ((t: T) => any), options?: MappingOptions)
+export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Promise<any>, key?: string | ((t: T) => any), options?: MappingOptions): (...args) => any {
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
-		if (!options) {
-			options = {
-				type: "binding"
+		setTimeout(async () => {
+			let m: ConstructorClass<T> = await model;
+
+			const mappingModel = getDBConfig(m);
+			let columnKey: string = getColumnKey(mappingModel, m, key)
+			if (!columnKey) {
+				throw "couldnt find defined key in " + m.name + " make sure it has an annotation (column /primary/ mapping)"
 			}
-		}
+			if (!options) {
+				options = {
+					type: "binding"
+				}
+			}
 
-		column(options)(target, propertyKey, descriptor);
-		column(options)(new model(), columnKey)
+			column(options)(target, propertyKey, descriptor);
+			column({ ...options })(new m(), columnKey)
 
-		const columnDef = getDBConfig(target).columns[propertyKey];
-		const mappingColumnDef: ColumnDefinition = getDBConfig(model).columns[columnKey];
+			const columnDef = getDBConfig(target).columns[propertyKey];
+			const mappingColumnDef: ColumnDefinition = getDBConfig(m).columns[columnKey];
 
-		columnDef.mapping = {
-			target: model,
-			column: mappingColumnDef,
-			type,
-			options: options
-		}
-		if (!mappingColumnDef.inverseMappingDef) {
-			mappingColumnDef.inverseMappingDef = []
-		}
+			columnDef.mapping = {
+				target: m,
+				column: mappingColumnDef,
+				type,
+				options: options
+			}
+			if (!mappingColumnDef.inverseMappingDef) {
+				mappingColumnDef.inverseMappingDef = []
+			}
 
-		mappingColumnDef.inverseMappingDef.push({
-			target: target,
-			targetColumn: propertyKey,
-			inverseMappingType: type
-		})
+			mappingColumnDef.inverseMappingDef.push({
+				target: target,
+				targetColumn: propertyKey,
+				inverseMappingType: type
+			})
+		}, 10)
+
 	}
 }
 

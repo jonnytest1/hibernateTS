@@ -1,6 +1,7 @@
 import { column, mapping, Mappings, primary } from '../../src/src';
 import { MappingCreate } from './mappingcreate';
 import { table } from "hibernatets"
+import { RecursiveMapping } from './recursive-mapping';
 @table()
 export class TestModel {
 
@@ -28,8 +29,15 @@ export class TestModel {
 	@mapping(Mappings.OneToOne, MappingCreate)
 	mappinglevel2: MappingCreate
 
+	@mapping(Mappings.OneToMany, RecursiveMapping, "testmodelRef")
+	recursiveMappings: Array<RecursiveMapping> = []
+
 	constructor(id?, col?) {
 		this.id = id
 		this.col2 = col;
 	}
+}
+
+export interface TestModelRef extends TestModel {
+	//
 }

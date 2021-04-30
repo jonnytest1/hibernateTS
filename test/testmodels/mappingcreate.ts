@@ -1,4 +1,6 @@
-import { column, mapping, Mappings, primary, table } from 'hibernatets';
+
+import { column, mapping, Mappings, primary, table } from '../../src/src';
+import type { ClWithMApping } from './cl-with-mapping';
 
 @table()
 export class MappingCreate {
@@ -18,5 +20,4 @@ export class MappingCreate {
         }
     })
     transformedProperty: ArrayBuffer
-
 }

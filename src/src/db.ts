@@ -15,10 +15,12 @@ export async function updateDatabase(modelRootPath: string, save = true) {
 
     const db = new DataBaseBase()
     const classes = await loadFiles(modelRootPath);
+    await new Promise(res => setTimeout(res, 20))
     await Promise.all(classes.map(async classObj => {
         await Promise.all(Object.values(classObj)
             .filter(exp => getDBConfig(exp))
             .map(async dbClass => {
+
                 const dbConfig = getDBConfig(dbClass);
                 const [tableData, columnData] = await Promise.all([
                     db.selectQuery<any>("SELECT * FROM `TABLES` WHERE `TABLES`.TABLE_NAME = ? ", [dbConfig.table], "information_schema"),
@@ -198,8 +200,11 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
 
                 colDbOpts.size = targetColDbOpts.size;
                 colDbOpts.nullable = hasOneToOneMapping
-                if (mappingDef.inverseMappingType == Mappings.OneToOne) {
+
+                if (mappingDef.inverseMappingType != Mappings.OneToOne) {
+                    //keep type binding if source of inverse mapping
                     colDbOpts.type = targetColDbOpts.type;
+
                 }
             }
             // return null;
@@ -256,6 +261,8 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
                 debugger;
             }
         } else if (columnConfig.inverseMappingDef && columnConfig.inverseMappingDef.every(def => def.inverseMappingType === Mappings.OneToMany)) {
+            console.log(columnConfig, column)
+            // if it  is an inverted mapping we need the column
             return null;
         } else {
             throw "unimplemented exception"
