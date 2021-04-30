@@ -248,7 +248,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
             debugger;
         }
     } else if (colDbOpts.type == "boolean") {
-        debugger;
+        columnSql += "    TINYINT "
 
     } else if (colDbOpts.type == "date") {
         debugger;

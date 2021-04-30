@@ -79,13 +79,12 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 			const columnOptions: ColumnOption = db.columns[column].opts
 			const mapping = db.columns[column].mapping;
 
-
-
-
 			let dbResultPropertyValue = dbResult[column];
 			if (columnOptions.transformations) {
 				const transformation: Transformations<typeof result[typeof column]> = columnOptions.transformations
-				dbResultPropertyValue = await columnOptions.transformations.loadFromDbToProperty(dbResultPropertyValue)
+				dbResultPropertyValue = await transformation.loadFromDbToProperty(dbResultPropertyValue)
+			} else if (columnOptions.type == "boolean") {
+				dbResultPropertyValue = dbResultPropertyValue ? true : false
 			}
 
 			result[column] = dbResultPropertyValue;

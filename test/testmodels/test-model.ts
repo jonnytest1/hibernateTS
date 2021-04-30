@@ -18,6 +18,9 @@ export class TestModel {
 	@column()
 	randomtext: string
 
+	@column({ type: "boolean" })
+	booleanIncTest: boolean
+
 	@column({ type: "number", size: "large" })
 	numberIncTest
 

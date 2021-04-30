@@ -8,6 +8,7 @@ export async function testsave() {
 
     const obj = new ClWithMApping("savetest");
     obj.test2 = new TestModel("abcee", "idontcare")
+    obj.test2.booleanIncTest = false
     obj.test.push(new TestModel("abceefgh", "idontcareeither"))
     await save(obj);
 
@@ -25,7 +26,9 @@ export async function testsave() {
     if (laodedObj.test[0].col2 != "idontcareeither") {
         throw "loaded or saved wrong"
     }
-
+    if (laodedObj.test[0].booleanIncTest !== false) {
+        throw "loaded or saved wrong"
+    }
     const additionalModel = new TestModel("additional", "causewhynot");
     additionalModel.mappinglevel2 = new MappingCreate()
     additionalModel.mappinglevel2.value = "2ndlevel val"
