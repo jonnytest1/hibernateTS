@@ -7,10 +7,12 @@ import { intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass, ISaveAbleObject } from './interface/mapping';
 import { ColumnOption, Transformations } from './annotations/database-annotation';
+import { type } from 'os';
 
 export interface LoadOptions<T> {
-	deep?: boolean | Array<string> | { [key: string]: string },
-	first?: boolean
+	deep?: boolean | Array<string> | { [key: string]: string | { filter: string, depths: number } },
+	first?: boolean,
+	idOnNonDeepOneToOne?: boolean
 }
 
 
@@ -96,9 +98,13 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 				if (shouldLoadColumn(options, column)) {
 					let additionalFilter = "";
 					if (options.deep && options.deep[column as string]) {
-						additionalFilter = " AND " + options.deep[column as string];
+						let filter = options.deep[column as string]
+						if (typeof filter !== "string") {
+							filter = filter.filter
+						}
+						additionalFilter = " AND " + filter;
 					}
-
+					options = nextLevelOptions(options)
 					if (mapping.type == Mappings.OneToMany) {
 						result[column] = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...options, first: false }) as any;
 					} else if (mapping.type == Mappings.OneToOne) {
@@ -110,7 +116,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 					} else {
 						throw new Error("missing mapping")
 					}
-				} else if (mapping.type == Mappings.OneToOne) {
+				} else if (mapping.type == Mappings.OneToOne && !options.idOnNonDeepOneToOne) {
 					//reset key when not loaded
 					result[column] = null;
 				}
@@ -142,6 +148,25 @@ function shouldLoadColumn<T>(options: LoadOptions<T>, column: string): boolean {
 		return options.deep.includes(column)
 	}
 
-	return !!options.deep[column];
+	const columnOptions = options.deep[column]
+	if (columnOptions && typeof columnOptions !== "string") {
+		return columnOptions.depths > 0
+	}
+	return !!columnOptions;
 
+}
+
+function nextLevelOptions<T>(options: LoadOptions<T>): LoadOptions<T> {
+	const deepOptions = options.deep;
+
+	if (typeof deepOptions !== "boolean" && !(deepOptions instanceof Array)) {
+		for (let i in deepOptions) {
+			const columnDeepOption = deepOptions[i]
+			if (typeof columnDeepOption !== "string") {
+				deepOptions[i] = { ...columnDeepOption, depths: columnDeepOption.depths - 1 }
+			}
+		}
+	}
+
+	return { ...options, deep: deepOptions }
 }

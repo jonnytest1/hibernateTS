@@ -1,7 +1,5 @@
 
-import { assert } from 'console';
-import { save } from 'hibernatets';
-import { load } from '../../src/src';
+import { load, save } from '../../src/src';
 import { RecursiveMapping } from '../testmodels/recursive-mapping';
 import { TestModel } from '../testmodels/test-model';
 
@@ -27,5 +25,33 @@ export async function testRecursiveMappings() {
     }
     if (laodedModel.recursiveMappings[0].backwardsMapping.col2 != "rec") {
         throw "didnt load correct backwardsmapping"
+    }
+
+
+    const loadingDepthsTestModel = new TestModel("test1234", "1234");
+    const loadingDepthsRecursiveMapping = new RecursiveMapping();
+    loadingDepthsRecursiveMapping.backwardsMapping = loadingDepthsTestModel;
+
+    loadingDepthsTestModel.recursiveMappings.push(loadingDepthsRecursiveMapping)
+
+    await save(loadingDepthsTestModel)
+
+
+    const loadedDepthsModel = await load(TestModel, m => m.col2 = loadingDepthsTestModel.col2, undefined, {
+        deep: {
+            "backwardsMapping": "TRUE=TRUE",
+            "recursiveMappings": {
+                filter: "TRUE=TRUE",
+                depths: 2
+            }
+        }, first: true
+    })
+
+    if (loadedDepthsModel.recursiveMappings.length !== 1) {
+        throw "didnt load recursiveMapping"
+    }
+
+    if (!loadedDepthsModel.recursiveMappings[0].backwardsMapping) {
+        throw "didnt load backwardsmapping"
     }
 }
