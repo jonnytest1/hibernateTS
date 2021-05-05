@@ -30,11 +30,30 @@ export async function testRecursiveMappings() {
 
     const loadingDepthsTestModel = new TestModel("test1234", "1234");
     const loadingDepthsRecursiveMapping = new RecursiveMapping();
-    loadingDepthsRecursiveMapping.backwardsMapping = loadingDepthsTestModel;
 
+    const otherTestModel = new TestModel("abc", "hjk")
+    const otherRecusriveMapping = new RecursiveMapping();
+    otherRecusriveMapping.backwardsMapping = loadingDepthsTestModel
+    otherTestModel.recursiveMappings.push(otherRecusriveMapping)
+
+    const otherRecusriveMapping2 = new RecursiveMapping();
+    otherRecusriveMapping2.backwardsMapping = loadingDepthsTestModel
+
+    const otherRecusriveMapping3 = new RecursiveMapping();
+    otherRecusriveMapping3.backwardsMapping = loadingDepthsTestModel
+
+    loadingDepthsRecursiveMapping.backwardsMapping = otherTestModel;
     loadingDepthsTestModel.recursiveMappings.push(loadingDepthsRecursiveMapping)
 
-    await save(loadingDepthsTestModel)
+    const loadingDepthsRecursiveMapping2 = new RecursiveMapping();
+    loadingDepthsRecursiveMapping2.backwardsMapping = loadingDepthsTestModel;
+    loadingDepthsTestModel.recursiveMappings.push(loadingDepthsRecursiveMapping2)
+
+    const loadingDepthsRecursiveMapping3 = new RecursiveMapping();
+    loadingDepthsRecursiveMapping3.backwardsMapping = loadingDepthsTestModel;
+    loadingDepthsTestModel.recursiveMappings.push(loadingDepthsRecursiveMapping3)
+
+    await save([loadingDepthsTestModel, otherTestModel])
 
 
     const loadedDepthsModel = await load(TestModel, m => m.col2 = loadingDepthsTestModel.col2, undefined, {
@@ -42,16 +61,28 @@ export async function testRecursiveMappings() {
             "backwardsMapping": "TRUE=TRUE",
             "recursiveMappings": {
                 filter: "TRUE=TRUE",
-                depths: 2
+                depths: 4
             }
         }, first: true
     })
 
-    if (loadedDepthsModel.recursiveMappings.length !== 1) {
-        throw "didnt load recursiveMapping"
+    if (loadedDepthsModel.recursiveMappings.length !== 3) {
+        throw "didnt load recursiveMappings"
     }
 
     if (!loadedDepthsModel.recursiveMappings[0].backwardsMapping) {
         throw "didnt load backwardsmapping"
+    }
+
+    if (!loadedDepthsModel.recursiveMappings[2].backwardsMapping) {
+        throw "didnt load backwardsmapping 2"
+    }
+
+    if (loadedDepthsModel.recursiveMappings[0].backwardsMapping.col2 != "hjk") {
+        throw "didnt load backwardsmapping att"
+    }
+
+    if (loadedDepthsModel.recursiveMappings[0].backwardsMapping.recursiveMappings[0].backwardsMapping.col2 != "1234") {
+        throw "didnt load backwardsmapping rec2"
     }
 }

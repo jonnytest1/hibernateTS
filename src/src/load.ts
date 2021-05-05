@@ -104,13 +104,13 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 						}
 						additionalFilter = " AND " + filter;
 					}
-					options = nextLevelOptions(options)
+					let nextOptions = nextLevelOptions(options)
 					if (mapping.type == Mappings.OneToMany) {
-						result[column] = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...options, first: false }) as any;
+						result[column] = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
 					} else if (mapping.type == Mappings.OneToOne) {
 						if (dbResult[column]) {
 							const targetConfig = getDBConfig(mapping.target);
-							const results = await load<any>(mapping.target, `${targetConfig.modelPrimary} = ?${additionalFilter}`, [dbResult[column]], { ...options, first: true })
+							const results = await load<any>(mapping.target, `${targetConfig.modelPrimary} = ?${additionalFilter}`, [dbResult[column]], { ...nextOptions, first: true })
 							result[column] = results;
 						}
 					} else {
@@ -157,9 +157,10 @@ function shouldLoadColumn<T>(options: LoadOptions<T>, column: string): boolean {
 }
 
 function nextLevelOptions<T>(options: LoadOptions<T>): LoadOptions<T> {
-	const deepOptions = options.deep;
+	let deepOptions = options.deep;
 
 	if (typeof deepOptions !== "boolean" && !(deepOptions instanceof Array)) {
+		deepOptions = { ...deepOptions }
 		for (let i in deepOptions) {
 			const columnDeepOption = deepOptions[i]
 			if (typeof columnDeepOption !== "string") {
