@@ -9,7 +9,7 @@ export interface ColumnDefinition<K = string> {
 	modelName: K
 	dbTableName: string
 
-	mapping?: Mapping,
+	mapping?: Mapping<any>,
 
 	inverseMappingDef?: Array<{
 		target: any,

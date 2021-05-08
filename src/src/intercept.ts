@@ -2,11 +2,13 @@
 import { update, pushUpdate } from './update';
 import { Mappings } from './interface/mapping-types';
 import { getDBConfig, getId } from './utils';
-import { ISaveAbleObject } from './interface/mapping';
-import { save } from '.';
+import { ConstructorClass, ISaveAbleObject, Mapping } from './interface/mapping';
+import { remove, save } from '.';
 import { DataBaseBase } from './mariadb-base';
 import { ColumnOption, DBColumn } from './annotations/database-annotation';
 import { ColumnDefinition } from './annotations/database-config';
+import { deleteFnc } from './delete';
+import { ExtendedMap } from './extended-map/extended-map';
 
 export function intercept<T>(object: ISaveAbleObject) {
 
@@ -93,19 +95,50 @@ export function intercept<T>(object: ISaveAbleObject) {
 	}
 }
 
-function interceptArray(object: ISaveAbleObject, column: string) {
+function interceptArray<T = any>(object: ISaveAbleObject & T, column: string) {
 	const mapping = getDBConfig(object).columns[column].mapping;
 	const obj = object[column];
 	if (mapping && obj instanceof Array) {
-		obj.push = new Proxy(obj.push, {
-			apply: (target, thisArg, items) => {
-				items.forEach(item => {
-					item[mapping.column.modelName] = getId(object)
-				})
-				pushUpdate(object, save(items));
-				return target.call(obj, ...items);
+		function applyProxies(array) {
+			array.push = new Proxy(array.push, {
+				apply: (target, thisArg, items) => {
+					items.forEach(item => {
+						item[mapping.column.modelName] = getId(object)
+					})
+					pushUpdate(object, save(items));
+					return target.call(array, ...items);
+				}
+			})
+			array.filter = new Proxy(array.filter, {
+				apply: (target, thisArg, items) => {
+					const predicate = items[0]
+					const deletingItems: Array<ISaveAbleObject> = []
+					items[0] = (item, ...args) => {
+						const result = predicate(item, ...args)
+						if (!result) {
+							deletingItems.push(item)
+						}
+						return result;
+					}
+
+					const filterResult = target.call(array, ...items);
+					if (deletingItems.length) {
+						pushUpdate(object, remove(mapping.target, deletingItems.map(it => getId(it))));
+					}
+					applyProxies(filterResult)
+					return filterResult
+				}
+			})
+
+		}
+		applyProxies(obj)
+		if (mapping.type == Mappings.OneToMany) {
+			let oneToManyMApping: Mapping<Mappings.OneToMany> = mapping
+			if (oneToManyMApping.options.loadType == "map") {
+				object["_" + column] = new ExtendedMap(mapping.target, obj)
+
 			}
-		})
+		}
 	}
 
 

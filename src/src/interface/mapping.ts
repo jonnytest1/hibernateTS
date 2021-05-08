@@ -1,13 +1,13 @@
-import { Mappings } from './mapping-types';
+import { MappingOptionsMap, Mappings } from './mapping-types';
 import { MappingOptions } from '../annotations/database-annotation';
 import { ColumnDefinition, DataBaseConfig } from '../annotations/database-config';
 
 
-export interface Mapping {
+export interface Mapping<T extends Mappings> {
 	target: ConstructorClass<any>;
 	column: ColumnDefinition;
-	type: Mappings;
-	options: MappingOptions;
+	type: T;
+	options: MappingOptionsMap[T];
 }
 
 
@@ -20,8 +20,6 @@ export interface ISaveAbleObject {
 	}
 
 	___persisted?: boolean
-
-
 }
 
 export interface ConstructorClass<T> {

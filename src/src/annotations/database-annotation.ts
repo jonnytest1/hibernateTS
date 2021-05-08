@@ -107,9 +107,6 @@ export function primary(options: primaryOptions = {}): (...args) => void {
 	}
 }
 
-export interface MappingOptions extends DBColumn {
-	lazyLoad?: boolean
-}
 
 function getColumnKey(mappingModel, model: ConstructorClass<any>, key?: string | ((t: any) => any)): string {
 	if (!key) {
@@ -124,12 +121,22 @@ function getColumnKey(mappingModel, model: ConstructorClass<any>, key?: string |
 	return key;
 }
 
+export interface MappingOptions extends DBColumn {
+	lazyLoad?: boolean
+}
 
+
+export interface OneToManyMappingOptions extends MappingOptions {
+	/**
+	 * @default "list"
+	 */
+	loadType?: "list" | "map"
+}
 
 
 export function mapping<T>(type: Mappings.OneToOne, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options?: MappingOptions)
-export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key: string | ((t: T) => any), options?: MappingOptions)
-export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options?: MappingOptions): (...args) => any {
+export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key: string | ((t: T) => any), options?: OneToManyMappingOptions)
+export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options: MappingOptions = {}): (...args) => any {
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
 		setTimeout(async () => {
 			let m: ConstructorClass<T> = await model;
@@ -139,10 +146,8 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Pr
 			if (!columnKey) {
 				throw "couldnt find defined key in " + m.name + " make sure it has an annotation (column /primary/ mapping)"
 			}
-			if (!options) {
-				options = {
-					type: "binding"
-				}
+			if (!options.type) {
+				options.type = "binding"
 			}
 
 			column(options)(target, propertyKey, descriptor);

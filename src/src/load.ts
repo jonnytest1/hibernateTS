@@ -6,7 +6,7 @@ import { save } from './save';
 import { intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass, ISaveAbleObject } from './interface/mapping';
-import { ColumnOption, Transformations } from './annotations/database-annotation';
+import { ColumnOption, OneToManyMappingOptions, Transformations } from './annotations/database-annotation';
 import { type } from 'os';
 
 export interface LoadOptions<T> {
@@ -106,7 +106,11 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 					}
 					let nextOptions = nextLevelOptions(options)
 					if (mapping.type == Mappings.OneToMany) {
-						result[column] = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
+
+						const items = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
+
+						result[column] = items
+
 					} else if (mapping.type == Mappings.OneToOne) {
 						if (dbResult[column]) {
 							const targetConfig = getDBConfig(mapping.target);

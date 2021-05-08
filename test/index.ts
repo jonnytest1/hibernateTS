@@ -11,6 +11,7 @@ import { testloaddeep } from './test/testloaddeep'
 import { testsave } from './test/testsave'
 import { testDbTransformer } from './test/test-db-transformer'
 import { testRecursiveMappings } from './test/test-recurisve-mappings'
+import { testMAp } from './testmodels/mapped-models/test-map-mapping'
 config()
 
 const native = new DataBaseBase();
@@ -32,13 +33,15 @@ const native = new DataBaseBase();
 	if (!recursivemappingColumns.some(c => c.COLUMN_NAME == "testmodelRef")) {
 		throw "didnt create inverse mapp column in target table"
 	}
-	for (let testFnc of [testRecursiveMappings, testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam, testDbTransformer]) {
+	for (let testFnc of [testMAp, testRecursiveMappings, testsave, testmapping, testloaddeep, testDuplicate, testloadbyparam, testDbTransformer]) {
 		try {
 			await Promise.all([
 				native.sqlquery("TRUNCATE TABLE `testmodel`;"),
 				native.sqlquery("TRUNCATE TABLE `clwithmapping`;"),
 				native.sqlquery("TRUNCATE TABLE `mappingcreate`;"),
-				native.sqlquery("TRUNCATE TABLE `recursivemapping`;")
+				native.sqlquery("TRUNCATE TABLE `recursivemapping`;"),
+				native.sqlquery("TRUNCATE TABLE `attributeitem`;")
+
 			])
 		} catch (e) {
 			console.error(e);

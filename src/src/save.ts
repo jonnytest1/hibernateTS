@@ -4,6 +4,7 @@ import { DataBaseBase } from './mariadb-base';
 import { Mappings } from './interface/mapping-types';
 import { Mapping, ISaveAbleObject } from './interface/mapping';
 import { ColumnOption } from './annotations/database-annotation';
+import { ExtendedMap } from './extended-map/extended-map';
 
 interface SaveOptions {
 	/**
@@ -88,15 +89,22 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 
 
 	for (let column of Object.values(db.columns)) {
-		const mapping: Mapping = column.mapping;
+		const mapping: Mapping<Mappings> = column.mapping;
 		if (mapping) {
 			const savingObjects: Array<{ parent?: any, subobject: any }> = []
 			for (const obj of objects) {
-				const subObjects = obj[column.modelName];
+				let subObjects = obj[column.modelName];
 				if (!subObjects) {
 					continue;
 				}
-				if (mapping.type == Mappings.OneToMany && subObjects instanceof Array) {
+				if (mapping.type == Mappings.OneToMany) {
+					if (!(subObjects instanceof Array)) {
+						if (subObjects instanceof ExtendedMap) {
+							subObjects = subObjects.__getItemRef()
+						} else {
+							throw new Error("missing implementation")
+						}
+					}
 					for (let subObj of subObjects) {
 						subObj[mapping.column.modelName] = getId(obj);
 					}

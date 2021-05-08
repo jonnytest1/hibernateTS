@@ -5,7 +5,6 @@ import { load } from './load';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass } from './interface/mapping';
 import { remove } from '.';
-import { primary } from './annotations/database-annotation';
 
 
 export interface DeleteOptions {
