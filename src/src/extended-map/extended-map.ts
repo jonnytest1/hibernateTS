@@ -2,7 +2,11 @@ import { remove } from '..';
 import { save } from '../save';
 import { ExtendedMapItem } from './extended-map-item';
 
-export class ExtendedMap<T extends ExtendedMapItem<any, any>> extends Map<string, ExtendedMapItem> {
+
+
+export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extends { [key in T["key"]]: T["value"] } = {
+    [key in T["key"]]: string
+}> extends Map<string, ExtendedMapItem> {
 
     constructor(private itemClass: new () => T, private parentArray: Array<T> = []) {
         super();
@@ -10,12 +14,12 @@ export class ExtendedMap<T extends ExtendedMapItem<any, any>> extends Map<string
             this.set(item.key, item)
         }
     }
-    getValue(key: T["key"]): T["value"] {
-        return this.get(key).value
+    getValue<K extends T["key"]>(key: K): ValueMap[K] {
+        return this.get(key).value as ValueMap[K]
     }
 
 
-    setValue(key: T["key"], val: T["value"]) {
+    setValue<K extends T["key"]>(key: K, val: ValueMap[K]) {
         const attribute = this.get(key);
         if (attribute) {
             attribute.value = val;
@@ -44,9 +48,9 @@ export class ExtendedMap<T extends ExtendedMapItem<any, any>> extends Map<string
 
     }
 
-    forEachValue(callbackfn: (value: T["value"], key: T["key"], map: ExtendedMap<T>) => void) {
+    forEachValue(callbackfn: <K extends T["key"]>(value: ValueMap[K], key: K, map: ExtendedMap<T>) => void) {
         this.forEach((val, key, map) => {
-            callbackfn(val.value, key, this)
+            callbackfn(val.value as ValueMap[string], key, this)
         })
     }
 
