@@ -7,6 +7,8 @@ export { save } from './save';
 export { Mappings } from './interface/mapping-types';
 export * from "./annotations/database-annotation"
 export { updateDatabase } from "./db"
+export * from "./extended-map/extended-map-item"
+export * from "./extended-map/extended-map"
 
 export async function queries(object: any): Promise<Array<number>> {
 	const updates: Array<Promise<number>> = object["_dbUpdates"] || [];
