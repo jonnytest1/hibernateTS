@@ -1,12 +1,11 @@
-import { remove } from '..';
-import { save } from '../save';
+
 import { ExtendedMapItem } from './extended-map-item';
 
 
 
 export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extends { [key in T["key"]]: T["value"] } = {
-    [key in T["key"]]: string
-}> extends Map<string, ExtendedMapItem> {
+    [key in T["key"]]: any
+}> extends Map<T["key"], ExtendedMapItem<T["key"], ValueMap[T["key"]]>> {
 
     constructor(private itemClass: new () => T, private parentArray: Array<T> = []) {
         super();
@@ -15,19 +14,23 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
         }
     }
     getValue<K extends T["key"]>(key: K): ValueMap[K] {
-        return this.get(key).value as ValueMap[K]
+        return JSON.parse(this.get(key).value);
     }
 
+
+    get<K extends T["key"]>(key: K): T {
+        return super.get(key) as T
+    }
 
     setValue<K extends T["key"]>(key: K, val: ValueMap[K]) {
         const attribute = this.get(key);
         if (attribute) {
-            attribute.value = val;
+            attribute.value = JSON.stringify(val);
         } else {
             const item = new this.itemClass()
             item.key = key
             this.set(key, item);
-            item.value = val;
+            item.value = JSON.stringify(val);
             this.parentArray.push(item);
         }
     }
@@ -68,3 +71,17 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
         return this.parentArray
     }
 }
+
+
+interface NewType {
+    test: "test1" | "test2";
+    hallo: "test2" | "abd";
+
+
+    fritzh: 123 | 456
+}
+
+let t: ExtendedMap<ExtendedMapItem<keyof NewType>, NewType>
+
+
+t.getValue("fritzh")
