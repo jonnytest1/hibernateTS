@@ -50,10 +50,10 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
         const iterator = {
             next: () => {
                 const item = baseIterator.next()
-                return item?.value;
+                return item?.value.parsed();
             },
             *[Symbol.iterator]() {
-                yield baseIterator.next()?.value
+                yield baseIterator.next()?.value.parsed()
             }
         }
         return iterator
@@ -62,7 +62,7 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
 
     forEachValue(callbackfn: <K extends T["key"]>(value: ValueMap[K], key: K, map: ExtendedMap<T>) => void) {
         this.forEach((val, key, map) => {
-            callbackfn(val.value as ValueMap[string], key, this)
+            callbackfn(val.parsed() as ValueMap[string], key, this)
         })
     }
 
