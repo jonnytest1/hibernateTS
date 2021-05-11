@@ -13,8 +13,17 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
             this.set(item.key, item)
         }
     }
-    getValue<K extends T["key"]>(key: K): ValueMap[K] {
-        return this.get(key).parsed();
+    getValue<K extends T["key"]>(key: K, fallback?: ValueMap[K]): ValueMap[K] {
+        let entry = this.get(key);
+        if (fallback && (!entry || entry.value == undefined)) {
+            if (!entry) {
+                entry = new this.itemClass()
+            }
+            if (entry.value == undefined) {
+                entry.setStringified(fallback)
+            }
+        }
+        return entry.parsed();
     }
 
 
