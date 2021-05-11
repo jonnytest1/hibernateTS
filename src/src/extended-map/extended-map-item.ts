@@ -6,8 +6,16 @@ export class ExtendedMapItem<K extends string = string, T = any> {
     id
 
     @column()
-    value: T
+    value: string
 
     @column()
     key: K
+
+    parsed(): T {
+        return JSON.parse(this.value)
+    }
+
+    setStringified(value: T) {
+        this.value = JSON.stringify(value)
+    }
 }

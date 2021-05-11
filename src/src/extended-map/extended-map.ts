@@ -3,7 +3,7 @@ import { ExtendedMapItem } from './extended-map-item';
 
 
 
-export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extends { [key in T["key"]]: T["value"] } = {
+export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extends { [key in T["key"]]: ReturnType<T["parsed"]> } = {
     [key in T["key"]]: any
 }> extends Map<T["key"], ExtendedMapItem<T["key"], ValueMap[T["key"]]>> {
 
@@ -14,7 +14,7 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
         }
     }
     getValue<K extends T["key"]>(key: K): ValueMap[K] {
-        return JSON.parse(this.get(key).value);
+        return this.get(key).parsed();
     }
 
 
@@ -25,17 +25,17 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
     setValue<K extends T["key"]>(key: K, val: ValueMap[K]) {
         const attribute = this.get(key);
         if (attribute) {
-            attribute.value = JSON.stringify(val);
+            attribute.setStringified(val)
         } else {
             const item = new this.itemClass()
             item.key = key
             this.set(key, item);
-            item.value = JSON.stringify(val);
+            item.setStringified(val)
             this.parentArray.push(item);
         }
     }
 
-    entryValues(): IterableIterator<T["value"]> {
+    entryValues(): IterableIterator<ReturnType<T["parsed"]>> {
         const baseIterator = this.entries()
 
         const iterator = {
@@ -72,7 +72,7 @@ export class ExtendedMap<T extends ExtendedMapItem<string, any>, ValueMap extend
     }
 }
 
-
+/*
 interface NewType {
     test: "test1" | "test2";
     hallo: "test2" | "abd";
@@ -84,4 +84,4 @@ interface NewType {
 let t: ExtendedMap<ExtendedMapItem<keyof NewType>, NewType>
 
 
-t.getValue("fritzh")
+t.getValue("fritzh")*/
