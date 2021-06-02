@@ -16,11 +16,24 @@ export class DataBaseBase {
 		const url = process.env.DB_URL;
 		const password = process.env.DB_PASSWORD;
 		const pool = mariadb.createPool({ host: url, user, connectionLimit: 5, password, port, database: db });
-		const connection = await pool.getConnection();
-		const result = await callback(pool);
-		await connection.end();
-		await pool.end();
-		return result;
+		let connection;
+		try {
+			connection = await pool.getConnection();
+			const result = await callback(pool);
+			await connection.end();
+			await pool.end();
+			return result;
+		} catch (e) {
+			if (connection) {
+				await connection.end()
+			}
+			if (pool) {
+				await pool.end()
+			}
+			console.error(e)
+			throw e
+		}
+
 
 	}
 
