@@ -8,6 +8,7 @@ import { Mappings } from './interface/mapping-types';
 import { ConstructorClass, ISaveAbleObject } from './interface/mapping';
 import { ColumnOption, OneToManyMappingOptions, Transformations } from './annotations/database-annotation';
 import { type } from 'os';
+import { ColumnDefinition } from './annotations/database-config';
 
 export interface LoadOptions<T> {
 	deep?: boolean | Array<string> | { [key: string]: string | { filter: string, depths: number } },
@@ -90,46 +91,94 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 			}
 
 			result[column] = dbResultPropertyValue;
+		}
 
+		results.push(result);
+	}))
+
+
+	await Promise.all(Object.keys(db.columns).map(async columnName => {
+		const column: ColumnDefinition<string> = db.columns[columnName]
+		const columnOptions: ColumnOption = column.opts
+		const mapping = column.mapping;
+
+		const idsToLoad: { [id: number]: unknown } = {}
+
+		await Promise.all(results.map(async result => {
 			if (mapping) {
 				if (mapping.type == Mappings.OneToMany) {
-					result[column] = [] as any;
+					result[columnName] = [] as any;
 				}
-				if (shouldLoadColumn(options, column)) {
-					let additionalFilter = "";
-					if (options.deep && options.deep[column as string]) {
-						let filter = options.deep[column as string]
-						if (typeof filter !== "string") {
-							filter = filter.filter
-						}
-						additionalFilter = " AND " + filter;
-					}
-					let nextOptions = nextLevelOptions(options)
+				if (shouldLoadColumn(options, columnName)) {
+
+					//let nextOptions = nextLevelOptions(options)
 					if (mapping.type == Mappings.OneToMany) {
+						idsToLoad[getId(result)] = result
+						//const items = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
 
-						const items = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
-
-						result[column] = items
+						//result[columnName] = items
 
 					} else if (mapping.type == Mappings.OneToOne) {
-						if (dbResult[column]) {
-							const targetConfig = getDBConfig(mapping.target);
-							const results = await load<any>(mapping.target, `${targetConfig.modelPrimary} = ?${additionalFilter}`, [dbResult[column]], { ...nextOptions, first: true })
-							result[column] = results;
+						if (result[columnName]) {
+							//const targetConfig = getDBConfig(mapping.target);
+
+							idsToLoad[result[columnName]] = result
+							//const results = await load<any>(mapping.target, `${targetConfig.modelPrimary} = ?${additionalFilter}`, [result[columnName]], { ...nextOptions, first: true })
+							//result[columnName] = results;
 						}
 					} else {
 						throw new Error("missing mapping")
 					}
 				} else if (mapping.type == Mappings.OneToOne && !options.idOnNonDeepOneToOne) {
 					//reset key when not loaded
-					result[column] = null;
+					result[columnName] = null;
 				}
 			}
+		}))
+
+
+		const idArray = Object.keys(idsToLoad);
+		if (idArray.length) {
+			let additionalFilter = "";
+			if (options.deep && options.deep[columnName]) {
+				let filter = options.deep[columnName]
+				if (typeof filter !== "string") {
+					filter = filter.filter
+				}
+				additionalFilter = " AND " + filter;
+			}
+			let nextOptions = nextLevelOptions(options)
+			const params = new Array(idArray.length).fill(`?`).join(",")
+			if (mapping.type === Mappings.OneToMany) {
+				const oneToManyItems = await load<any>(mapping.target, `\`${mapping.column.dbTableName}\` IN(${params})${additionalFilter}`, idArray, { ...nextOptions, first: false }) as any;
+
+				for (const item of oneToManyItems) {
+					const parentObject = idsToLoad[item[mapping.column.dbTableName]]
+					parentObject[columnName] = parentObject[columnName] || []
+					parentObject[columnName].push(item);
+				}
+
+				//result[columnName] = items
+			} else if (mapping.type == Mappings.OneToOne) {
+				const targetConfig = getDBConfig(mapping.target)
+				const oneToOneItems = await load<any>(mapping.target, `\`${targetConfig.modelPrimary}\` IN(${params})${additionalFilter}`, idArray, { ...nextOptions })
+
+				for (const item of oneToOneItems) {
+					const parentObject = idsToLoad[item[targetConfig.modelPrimary]]
+					parentObject[columnName] = item;
+				}
+			} else {
+				throw new Error("missing mapping")
+			}
 		}
+	}))
+
+	for (let result of results) {
 		result.___persisted = true
 		intercept(result);
-		results.push(result);
-	}))
+	}
+
+
 	if ((typeof primaryKeyOrFilter == "string" || typeof primaryKeyOrFilter == "function") && !(options && options.first)) {
 		return results;
 	}
@@ -173,5 +222,5 @@ function nextLevelOptions<T>(options: LoadOptions<T>): LoadOptions<T> {
 		}
 	}
 
-	return { ...options, deep: deepOptions }
+	return { ...options, deep: deepOptions, first: false }
 }

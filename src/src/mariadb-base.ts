@@ -1,4 +1,5 @@
 import * as mariadb from "mariadb";
+import { Exception } from './exception';
 
 interface DatabaseResult {
 	insertId: number,
@@ -9,7 +10,10 @@ interface DatabaseResult {
 
 export class DataBaseBase {
 
+	static queryCt = 0
+
 	private async query<T>(callback: (pool: mariadb.Pool) => Promise<T>, db_name?: string): Promise<T> {
+		DataBaseBase.queryCt++;
 		const db = db_name || process.env.DB_NAME;
 		const port = +process.env.DB_PORT;
 		const user = process.env.DB_USER;
@@ -40,17 +44,19 @@ export class DataBaseBase {
 	}
 
 	async sqlquery<T>(queryString: string, params: Array<any> = []): Promise<DatabaseResult> {
-		return this.query(connection => connection.query(queryString, params)).catch(e => {
-			console.error(e, queryString)
-			throw e;
-		});
+		try {
+			return await this.query(connection => connection.query(queryString, params))
+		} catch (e) {
+			throw new Exception("exception while executing sql: " + queryString, e);
+		}
 	}
 
 	async selectQuery<T>(queryString: string, params: Array<any> = [], db_name?: string): Promise<Array<T>> {
-		return this.query(connection => connection.query(queryString, params), db_name).catch(e => {
-			console.error(e, queryString)
-			throw e;
-		});;
+		try {
+			return await this.query(connection => connection.query(queryString, params), db_name)
+		} catch (e) {
+			throw new Exception("exception while executing sql: " + queryString, e);
+		}
 	}
 
 

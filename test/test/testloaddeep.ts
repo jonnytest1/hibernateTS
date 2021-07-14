@@ -1,6 +1,7 @@
 import { load, queries, save } from '../../src/src';
 import { TestModel } from '../testmodels/test-model';
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
+import { DataBaseBase } from '../../src/src/mariadb-base';
 
 export async function testloaddeep() {
 
@@ -21,8 +22,6 @@ export async function testloaddeep() {
     if (!model.test2) {
         throw "didnt load oneToOne"
     }
-
-
     const model2 = await load(ClWithMApping, m => m.id = cl.id, [], { first: true, deep: ["test"] })
 
     if (model2.test.length !== 2) {
@@ -33,6 +32,8 @@ export async function testloaddeep() {
     }
 
     const model3 = await load(ClWithMApping, m => m.id = cl.id, [], { first: true, deep: ["test2"] })
+
+
 
     if (model3.test.length === 2) {
         throw "did load oneToMany"
