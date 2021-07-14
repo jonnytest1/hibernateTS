@@ -137,40 +137,54 @@ export interface OneToManyMappingOptions extends MappingOptions {
 export function mapping<T>(type: Mappings.OneToOne, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options?: MappingOptions)
 export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key: string | ((t: T) => any), options?: OneToManyMappingOptions)
 export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options: MappingOptions = {}): (...args) => any {
+
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
+		if (model == undefined) {
+			console.error(`couldnt get instance for key ${propertyKey} in class ${target.constructor.name} 
+			this might be due to circular dependencies 
+			    use type imports to prevent just using a type from getting the class instance (tsconfig.json#compilerOptions.importsNotUsedAsValues)
+				=> use 'import("./test-model").then(i => i.TestModel)' instead of 'TestModel' with synchronous import
+			`)
+			throw new Error()
+		}
 		setTimeout(async () => {
-			let m: ConstructorClass<T> = await model;
+			try {
 
-			const mappingModel = getDBConfig(m);
-			let columnKey: string = getColumnKey(mappingModel, m, key)
-			if (!columnKey) {
-				throw "couldnt find defined key in " + m.name + " make sure it has an annotation (column /primary/ mapping)"
+				let m: ConstructorClass<T> = await model;
+
+				const mappingModel = getDBConfig(m);
+				let columnKey: string = getColumnKey(mappingModel, m, key)
+				if (!columnKey) {
+					throw "couldnt find defined key in " + m.name + " make sure it has an annotation (column /primary/ mapping)"
+				}
+				if (!options.type) {
+					options.type = "binding"
+				}
+
+				column(options)(target, propertyKey, descriptor);
+				column({ ...options })(new m(), columnKey)
+
+				const columnDef = getDBConfig(target).columns[propertyKey];
+				const mappingColumnDef: ColumnDefinition = getDBConfig(m).columns[columnKey];
+
+				columnDef.mapping = {
+					target: m,
+					column: mappingColumnDef,
+					type,
+					options: options
+				}
+				if (!mappingColumnDef.inverseMappingDef) {
+					mappingColumnDef.inverseMappingDef = []
+				}
+
+				mappingColumnDef.inverseMappingDef.push({
+					target: target,
+					targetColumn: propertyKey,
+					inverseMappingType: type
+				})
+			} catch (e) {
+				console.error(e)
 			}
-			if (!options.type) {
-				options.type = "binding"
-			}
-
-			column(options)(target, propertyKey, descriptor);
-			column({ ...options })(new m(), columnKey)
-
-			const columnDef = getDBConfig(target).columns[propertyKey];
-			const mappingColumnDef: ColumnDefinition = getDBConfig(m).columns[columnKey];
-
-			columnDef.mapping = {
-				target: m,
-				column: mappingColumnDef,
-				type,
-				options: options
-			}
-			if (!mappingColumnDef.inverseMappingDef) {
-				mappingColumnDef.inverseMappingDef = []
-			}
-
-			mappingColumnDef.inverseMappingDef.push({
-				target: target,
-				targetColumn: propertyKey,
-				inverseMappingType: type
-			})
 		}, 10)
 
 	}

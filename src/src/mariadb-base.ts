@@ -15,16 +15,18 @@ export class DataBaseBase {
 		const user = process.env.DB_USER;
 		const url = process.env.DB_URL;
 		const password = process.env.DB_PASSWORD;
-		const pool = mariadb.createPool({ host: url, user, connectionLimit: 5, password, port, database: db });
-		let connection;
+		const pool = mariadb.createPool({ host: url, user, connectionLimit: 5, password, port, database: db, });
+		let connection: mariadb.PoolConnection;
 		try {
 			connection = await pool.getConnection();
 			const result = await callback(pool);
+			connection.release()
 			await connection.end();
 			await pool.end();
 			return result;
 		} catch (e) {
 			if (connection) {
+				connection.release()
 				await connection.end()
 			}
 			if (pool) {
@@ -38,11 +40,17 @@ export class DataBaseBase {
 	}
 
 	async sqlquery<T>(queryString: string, params: Array<any> = []): Promise<DatabaseResult> {
-		return this.query(connection => connection.query(queryString, params));
+		return this.query(connection => connection.query(queryString, params)).catch(e => {
+			console.error(e, queryString)
+			throw e;
+		});
 	}
 
 	async selectQuery<T>(queryString: string, params: Array<any> = [], db_name?: string): Promise<Array<T>> {
-		return this.query(connection => connection.query(queryString, params), db_name);
+		return this.query(connection => connection.query(queryString, params), db_name).catch(e => {
+			console.error(e, queryString)
+			throw e;
+		});;
 	}
 
 

@@ -17,6 +17,7 @@ export interface ISaveAbleObject {
 		prototype: {
 			database: DataBaseConfig
 		}
+		name?: string
 	}
 
 	___persisted?: boolean
