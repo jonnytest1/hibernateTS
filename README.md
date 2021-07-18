@@ -89,6 +89,17 @@ const obj:TestModel = await load(TestModel,t=>t.randomcolumn="test",[],{ first:t
   othermodels:" othermodelatt = 'test'  "
 }});  //only loads othermodels with query !!!careful of sql injection
 ```
+
+alternatively all options can be passed in this format
+```typescript
+const obj:Array<TestModel> = await load(TestModel,{
+  filter: "randomcolumn = ?", //for loading all just leave away
+	params: ["test"],
+	options: {
+     deep :true
+  }
+});
+```
 ##### Updates
 see [Timing](#timing) if you want to await finishing of request
 ```typescript
