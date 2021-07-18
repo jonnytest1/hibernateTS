@@ -24,7 +24,6 @@ export async function testlaodCalls() {
         throw "didnt load stuff efficiently"
     }
 
-
     if (loaded.length != 2) {
         throw "didnt load all"
     }
@@ -33,6 +32,28 @@ export async function testlaodCalls() {
         throw "didnt load nested"
     }
     if (loaded[1].test.length !== 2) {
+        throw "didnt load nested"
+    }
+
+    let queryCount2 = DataBaseBase.queryCt
+    const loadedObj = await load(ClWithMApping, {
+        options: {
+            deep: ["test"]
+        }
+    });
+    const newCount2 = DataBaseBase.queryCt
+    if (queryCount2 + 2 !== newCount2) {
+        throw "didnt load stuff efficiently"
+    }
+
+    if (loadedObj.length != 2) {
+        throw "didnt load all"
+    }
+
+    if (loadedObj[0].test.length !== 2) {
+        throw "didnt load nested"
+    }
+    if (loadedObj[1].test.length !== 2) {
         throw "didnt load nested"
     }
 }

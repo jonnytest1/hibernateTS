@@ -16,21 +16,41 @@ export interface LoadOptions<T> {
 	idOnNonDeepOneToOne?: boolean
 }
 
+export interface LoadParams<T, F = string | number | ((obj: T) => any), O = LoadOptions<T>> {
+	filter?: F
+	params?: Array<string | number> | string
 
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters: Array<string | number> | string, options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any, parameters?: undefined | undefined[], options?: LoadOptions<T>): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | number | ((obj: T) => any), parameters: Array<string | number> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
+	options?: O
+}
+
+
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any | LoadParams<T, (obj: T) => any, { first: true } & CustomOmit<LoadOptions<T>, "first">>, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | LoadParams<T, string, { first: true } & CustomOmit<LoadOptions<T>, "first">>, parameters: Array<string | number> | string, options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | LoadParams<T, string>, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any | LoadParams<T, (obj: T) => any>, parameters?: undefined | undefined[], options?: LoadOptions<T>): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number | LoadParams<T, number>, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | number | ((obj: T) => any) | LoadParams<T>, parameters: Array<string | number> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
 	const db = getDBConfig<T>(findClass);
 	let sql = "SELECT * FROM " + db.table + " ";
 
-	sql += "WHERE ";
+
 
 	let params: Array<string | number> = [];
-	if (typeof primaryKeyOrFilter == "string") {
-		sql += primaryKeyOrFilter;
+	let filter: string | ((obj: T) => any) | number;
+	if (typeof primaryKeyOrFilter == "object") {
+		filter = primaryKeyOrFilter.filter;
+		parameters = primaryKeyOrFilter.params
+		options = primaryKeyOrFilter.options
+	} else {
+		filter = primaryKeyOrFilter;
+	}
+
+	if (typeof filter != "undefined") {
+		sql += "WHERE ";
+	}
+
+	if (typeof filter == "string") {
+		sql += filter;
 
 		if (typeof parameters === "string") {
 			parameters = [parameters];
@@ -39,13 +59,13 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		parameters.forEach(param => {
 			params.push(param)
 		});
-	} else if (typeof primaryKeyOrFilter === "function") {
+	} else if (typeof filter === "function") {
 		// format :  s => s.id = +req.params.id
 		const tempObj = new findClass();
 		for (let column in db.columns) {
 			tempObj[column] = column as any;
 		}
-		primaryKeyOrFilter(tempObj);
+		filter(tempObj);
 
 		const previousLength = params.length;
 		sql += Object.values<any>(db.columns)
@@ -65,9 +85,9 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		if (previousLength === params.length) {
 			throw new Error("missing filter");
 		}
-	} else {
+	} else if (typeof filter == "number") {
 		sql += db.modelPrimary + " = ?";
-		params.push(primaryKeyOrFilter)
+		params.push(filter)
 	}
 
 	const dbResults = await new DataBaseBase().selectQuery<any>(sql, params)
@@ -179,7 +199,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 	}
 
 
-	if ((typeof primaryKeyOrFilter == "string" || typeof primaryKeyOrFilter == "function") && !(options && options.first)) {
+	if ((typeof filter == "string" || typeof filter == "function" || typeof filter == "undefined") && !(options && options.first)) {
 		return results;
 	}
 	return results[0];

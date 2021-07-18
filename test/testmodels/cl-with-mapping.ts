@@ -13,7 +13,7 @@ export class ClWithMApping {
 	test2: TestModel
 
 	@primary()
-	id
+	id: number
 
 	@mapping(Mappings.OneToOne, MappingCreate)
 	mappingcreate: Array<MappingCreate>

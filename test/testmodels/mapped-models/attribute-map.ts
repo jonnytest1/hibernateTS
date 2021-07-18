@@ -8,7 +8,7 @@ import { AttributeItem } from './attribute-item';
 export class AttributeHolder {
 
     @primary()
-    id
+    id: number
 
     @mapping(Mappings.OneToMany, AttributeItem, "attributeRef", { loadType: "map" })
     attributes = new ExtendedMap(AttributeItem, [])
