@@ -86,6 +86,8 @@ export interface primaryOptions extends DBColumn {
 	strategy?: PrimaryType
 }
 
+
+
 export function primary(options: primaryOptions = {}): (...args) => void {
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
 		if (!options.strategy) {

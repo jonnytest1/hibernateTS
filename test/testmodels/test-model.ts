@@ -6,7 +6,7 @@ import { RecursiveMapping } from './recursive-mapping';
 export class TestModel {
 
 	@primary({ strategy: 'custom' })
-	id
+	id: number
 
 	@column()
 	col2

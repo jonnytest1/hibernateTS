@@ -1,5 +1,6 @@
 import { load, save } from '../../src/src'
 import { DataBaseBase } from '../../src/src/mariadb-base'
+import { SqlCondition } from '../../src/src/sql-condition'
 import { ClWithMApping } from '../testmodels/cl-with-mapping'
 import { TestModel } from '../testmodels/test-model'
 
@@ -24,16 +25,26 @@ export async function testlaodCalls() {
         throw "didnt load stuff efficiently"
     }
 
-    if (loaded.length != 2) {
-        throw "didnt load all"
+    const loadedWithCondition = await load(ClWithMApping, SqlCondition.ALL, undefined, {
+        deep: ["test"]
+    })
+    if (newCount + 2 !== DataBaseBase.queryCt) {
+        throw "didnt load stuff efficiently"
+    }
+    for (const loadedMappings of [loaded, loadedWithCondition]) {
+        if (loadedMappings.length != 2) {
+            throw "didnt load all"
+        }
+
+        if (loadedMappings[0].test.length !== 2) {
+            throw "didnt load nested"
+        }
+        if (loadedMappings[1].test.length !== 2) {
+            throw "didnt load nested"
+        }
     }
 
-    if (loaded[0].test.length !== 2) {
-        throw "didnt load nested"
-    }
-    if (loaded[1].test.length !== 2) {
-        throw "didnt load nested"
-    }
+
 
     let queryCount2 = DataBaseBase.queryCt
     const loadedObj = await load(ClWithMApping, {

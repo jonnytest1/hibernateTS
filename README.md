@@ -71,10 +71,19 @@ const obj:Array<TestModel> = await load(TestModel,t=>t.randomcolumn="test"); //a
 const obj:TestModel = await load(TestModel,t=>t.randomcolumn="test",[],{first:true}); //assignment here
 ```
 or 
+
+also see [SqlCondition](src/src/sql-condition.ts)
+
+```typescript
+
+const obj:Array<TestModel> = await load(TestModel,new SqlCondition().column("randomcolumn").equals("test"));
+const obj:TestModel = await load(TestModel,new SqlCondition().column("randomcolumn").equals("test"),[],{first:true});
+```
+or
 ```javascript
-//!!!careful of sql injection
+//!!!careful of sql injection with this approach @Deprecated in favor of SqlCondition
 const obj:Array<TestModel> = await load(TestModel,"randomcolumn = ?",["test"]);
-//!!!careful of sql injection
+//!!!careful of sql injection with this approach @Deprecated in favor of SqlCondition
 const obj:TestModel = await load(TestModel,"randomcolumn = ?",["test"],{first:true});
 ```
 

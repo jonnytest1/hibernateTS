@@ -6,7 +6,7 @@ import type { ClWithMApping } from './cl-with-mapping';
 export class MappingCreate {
 
     @primary()
-    id
+    id: number
 
     @column()
     value

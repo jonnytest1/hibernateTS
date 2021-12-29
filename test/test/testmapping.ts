@@ -1,7 +1,8 @@
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
-import { save, load, queries } from 'hibernatets';
+import { save, queries } from 'hibernatets';
 import { TestModel } from '../testmodels/test-model';
-import { remove } from '../../src/src';
+import { load, remove } from '../../src/src';
+import { SqlCondition } from '../../src/src/sql-condition';
 
 export async function testmapping() {
 
@@ -35,5 +36,8 @@ export async function testmapping() {
 		throw "failed deleting"
 	}
 
-
+	const loadedCondMapping = await load(TestModel, new SqlCondition().column("id").equals(mapping.test2.id), [], { first: true })
+	if (loadedMapping) {
+		throw "failed deleting"
+	}
 }
