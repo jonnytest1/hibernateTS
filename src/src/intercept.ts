@@ -70,7 +70,7 @@ export function intercept<T>(object: ISaveAbleObject) {
 						}
 						hasSaved = true;
 						pushUpdate(object, save(value).then(async primaryKey => {
-							const sql = "UPDATE " + db.table + " SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
+							const sql = "UPDATE `" + db.table + "` SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
 							const deleteResult = await new DataBaseBase().sqlquery(sql, [primaryKey[0], getId(object)])
 						}))
 						intercept(value);

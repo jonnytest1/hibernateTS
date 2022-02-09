@@ -89,7 +89,7 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 		}
 	}
 
-	let sql = `DELETE FROM ${db.table} 
+	let sql = `DELETE FROM \`${db.table}\` 
 		WHERE `;
 
 	sql += dletionId.map(id => {

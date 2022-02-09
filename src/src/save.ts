@@ -121,7 +121,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 			if (savingObjects.length > 0) {
 				const ids = await save(savingObjects.filter(obj => !isPersisted(obj.subobject)).map(o => o.subobject));
 				if (mapping.type == Mappings.OneToOne) {
-					const sql = "UPDATE " + db.table + " SET `" + column.dbTableName + "` = ? WHERE " + db.modelPrimary + " = ?";
+					const sql = "UPDATE `" + db.table + "` SET `" + column.dbTableName + "` = ? WHERE " + db.modelPrimary + " = ?";
 					const deleteResult = await new DataBaseBase().sqlquery(sql, [ids[0], getId(savingObjects[0].parent)])
 				}
 			}

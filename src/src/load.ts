@@ -34,7 +34,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number | LoadParams<T, number>, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<T>;
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | number | ((obj: T) => any) | LoadParams<T>, parameters: Array<string | number> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
 	const db = getDBConfig<T>(findClass);
-	let sql = "SELECT * FROM " + db.table + " ";
+	let sql = "SELECT * FROM `" + db.table + "` ";
 
 
 
