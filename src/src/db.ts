@@ -305,6 +305,9 @@ async function loadFiles(path: string): Promise<Array<any>> {
             return await loadFiles(absolutePath);
         }
     }));
+    if (!classes.length) {
+        return []
+    }
     return classes.reduce((a, b) => [...a, ...b]);
 
 }

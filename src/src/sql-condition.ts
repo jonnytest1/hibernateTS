@@ -6,7 +6,7 @@ export class SqlCondition {
     static readonly ALL = new SqlCondition("TRUE=TRUE")
 
     parameters: Array<SqlParameter> = [];
-
+    usedcolumns: Array<string> = []
     constructor(private sql?: string) {
 
     }
@@ -20,6 +20,7 @@ export class SqlCondition {
         if (columnName.match(/[`'"]/g)) {
             throw new Error("dont do this >:/")
         }
+        this.usedcolumns.push(columnName)
         this.sql += `\`${columnName}\` `
         return this;
     }
@@ -55,6 +56,16 @@ export class SqlCondition {
         this.sql += " = ? "
         this.parameters.push(other)
         return this
+    }
+
+    checkColumns(classref) {
+        const instnace = new classref();
+        for (const column of this.usedcolumns) {
+            if (!Object.keys(instnace).includes(column)) {
+                throw new Error("missing column")
+            }
+
+        }
     }
 
     build(params: Array<SqlParameter> | null) {
