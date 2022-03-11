@@ -1,7 +1,6 @@
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
-import { save, queries } from 'hibernatets';
 import { TestModel } from '../testmodels/test-model';
-import { load, remove } from '../../src/src';
+import { load, queries, remove, save } from '../../src/src';
 import { SqlCondition } from '../../src/src/sql-condition';
 
 export async function testmapping() {

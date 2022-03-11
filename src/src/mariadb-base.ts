@@ -2,7 +2,7 @@ import * as mariadb from "mariadb";
 import { Exception } from './exception';
 
 interface DatabaseResult {
-	insertId: number,
+	insertId: BigInt,
 	affectedRows: number,
 
 	warningStatus: number

@@ -1,4 +1,5 @@
-import { load, queries, save } from 'hibernatets';
+
+import { load, queries, save } from '../../src/src';
 import { MappingCreate } from '../testmodels/mappingcreate';
 
 export async function testDbTransformer() {

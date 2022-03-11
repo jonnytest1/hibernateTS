@@ -16,6 +16,7 @@ export async function testlaodCalls() {
 
     const saved = await save([cl1, cl2])
 
+
     let queryCount = DataBaseBase.queryCt
     const loaded = await load(ClWithMApping, "TRUE=TRUE", undefined, {
         deep: ["test"]

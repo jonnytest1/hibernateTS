@@ -8,7 +8,9 @@ export class SqlCondition {
     parameters: Array<SqlParameter> = [];
     usedcolumns: Array<string> = []
     constructor(private sql?: string) {
-
+        if (this.sql === undefined) {
+            this.sql = ''
+        }
     }
 
     /**

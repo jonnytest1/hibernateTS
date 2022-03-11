@@ -75,12 +75,12 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 			.map(key => `${key} = VALUES(${key})`).join(",")
 	}
 
-	const response: any = await new DataBaseBase().sqlquery(sql, params);
+	const response = await new DataBaseBase().sqlquery(sql, params);
 
 	for (let i = 0; i < objects.length; i++) {
 		if (db.columns[db.modelPrimary].primaryType == "auto-increment") {
 			const subObj = objects[i];
-			const insertId = response.insertId + i
+			const insertId = Number(response.insertId) + i
 			setId(subObj, insertId);
 		}
 		objects[i].___persisted = true

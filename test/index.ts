@@ -1,5 +1,4 @@
-import { table, load, mapping, Mappings, intercept, primary, column, save } from "hibernatets"
-import { DataBaseBase } from "hibernatets/mariadb-base"
+
 
 import { config } from "dotenv"
 import { testDuplicate } from './test/duplicateupdate'
@@ -13,6 +12,7 @@ import { testDbTransformer } from './test/test-db-transformer'
 import { testRecursiveMappings } from './test/test-recurisve-mappings'
 import { testMAp } from './testmodels/mapped-models/test-map-mapping'
 import { testlaodCalls } from './test/testloadcalls'
+import { DataBaseBase } from '../src/src/mariadb-base'
 config()
 
 const native = new DataBaseBase();
@@ -34,7 +34,8 @@ const native = new DataBaseBase();
 	if (!recursivemappingColumns.some(c => c.COLUMN_NAME == "testmodelRef")) {
 		throw "didnt create inverse mapp column in target table"
 	}
-	for (let testFnc of [testlaodCalls, testloaddeep, testMAp, testRecursiveMappings, testsave, testmapping, testDuplicate, testloadbyparam, testDbTransformer]) {
+	for (let testFnc of [testlaodCalls, testloaddeep, testMAp, testRecursiveMappings, testsave, testmapping, testDuplicate,
+		testloadbyparam, testDbTransformer]) {
 		try {
 			await Promise.all([
 				native.sqlquery("TRUNCATE TABLE `testmodel`;"),

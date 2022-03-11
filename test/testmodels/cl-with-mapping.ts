@@ -16,7 +16,7 @@ export class ClWithMApping {
 	id: number
 
 	@mapping(Mappings.OneToOne, MappingCreate)
-	mappingcreate: Array<MappingCreate>
+	mappingcreate: MappingCreate
 
 	@column()
 	idKey

@@ -1,6 +1,7 @@
-import { save, load } from 'hibernatets';
+
 import { TestModel } from '../testmodels/test-model';
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
+import { load, save } from '../../src/src';
 
 export async function testloadbyparam() {
 	const objects = []

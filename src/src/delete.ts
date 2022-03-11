@@ -28,7 +28,6 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 		descriptor = descriptor.constructor
 	}
 
-
 	if (typeof primaryId === 'number') {
 		dletionId = [primaryId];
 	}

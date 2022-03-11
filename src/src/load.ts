@@ -105,6 +105,10 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 	await Promise.all(dbResults.map(async dbResult => {
 		const result: T & ISaveAbleObject = new findClass();
+
+		if (typeof dbResult[db.modelPrimary] == "bigint") {
+			dbResult[db.modelPrimary] = Number(dbResult[db.modelPrimary])
+		}
 		result[db.modelPrimary] = dbResult[db.modelPrimary]
 
 		for (let column in db.columns) {
@@ -131,7 +135,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		const columnOptions: ColumnOption = column.opts
 		const mapping = column.mapping;
 
-		const idsToLoad: { [id: number]: unknown } = {}
+		const idsToLoad: { [id: number]: Array<unknown> } = {}
 
 		await Promise.all(results.map(async result => {
 			if (mapping) {
@@ -142,7 +146,8 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 					//let nextOptions = nextLevelOptions(options)
 					if (mapping.type == Mappings.OneToMany) {
-						idsToLoad[getId(result)] = result
+						idsToLoad[getId(result)] ??= [];
+						idsToLoad[getId(result)].push(result)
 						//const items = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
 
 						//result[columnName] = items
@@ -151,7 +156,8 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 						if (result[columnName]) {
 							//const targetConfig = getDBConfig(mapping.target);
 
-							idsToLoad[result[columnName]] = result
+							idsToLoad[result[columnName]] ??= []
+							idsToLoad[result[columnName]].push(result)
 							//const results = await load<any>(mapping.target, `${targetConfig.modelPrimary} = ?${additionalFilter}`, [result[columnName]], { ...nextOptions, first: true })
 							//result[columnName] = results;
 						}
@@ -191,9 +197,11 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 				const oneToManyItems = await load<any>(mapping.target, `\`${mapping.column.dbTableName}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions, first: false }) as any;
 
 				for (const item of oneToManyItems) {
-					const parentObject = idsToLoad[item[mapping.column.dbTableName]]
-					parentObject[columnName] = parentObject[columnName] || []
-					parentObject[columnName].push(item);
+					const parentObjects = idsToLoad[item[mapping.column.dbTableName]]
+					parentObjects.forEach(obj => {
+						obj[columnName] = obj[columnName] || []
+						obj[columnName].push(item);
+					})
 				}
 
 				//result[columnName] = items
@@ -202,8 +210,10 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 				const oneToOneItems = await load<any>(mapping.target, `\`${targetConfig.modelPrimary}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions })
 
 				for (const item of oneToOneItems) {
-					const parentObject = idsToLoad[item[targetConfig.modelPrimary]]
-					parentObject[columnName] = item;
+					const parentObjects = idsToLoad[item[targetConfig.modelPrimary]]
+					parentObjects.forEach(obj => {
+						obj[columnName] = item;
+					});
 				}
 			} else {
 				throw new Error("missing mapping")

@@ -17,7 +17,7 @@
             "args": [
                 "${workspaceFolder}\\index.ts"
             ],
-            "restart": true,
+            "restart": false,
         }
     ]
 }

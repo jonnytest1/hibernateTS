@@ -1,4 +1,5 @@
-import { save } from 'hibernatets';
+
+import { save } from '../../src/src';
 import { TestModel } from '../testmodels/test-model';
 
 export async function testDuplicate() {
