@@ -121,6 +121,8 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 				dbResultPropertyValue = await transformation.loadFromDbToProperty(dbResultPropertyValue)
 			} else if (columnOptions.type == "boolean") {
 				dbResultPropertyValue = dbResultPropertyValue ? true : false
+			} else if (columnOptions.type == "number" && typeof dbResultPropertyValue == "bigint") {
+				dbResultPropertyValue = Number(dbResultPropertyValue)
 			}
 
 			result[column] = dbResultPropertyValue;

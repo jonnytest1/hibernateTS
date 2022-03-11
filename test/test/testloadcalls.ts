@@ -40,6 +40,9 @@ export async function testlaodCalls() {
         if (loadedMappings[0].test.length !== 2) {
             throw "didnt load nested"
         }
+        if (typeof loadedMappings[0].test[0]['clref'] !== 'number') {
+            throw "didnt load ids correctly"
+        }
         if (loadedMappings[1].test.length !== 2) {
             throw "didnt load nested"
         }
