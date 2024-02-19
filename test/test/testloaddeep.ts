@@ -1,7 +1,6 @@
 import { load, queries, save } from '../../src/src';
 import { TestModel } from '../testmodels/test-model';
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
-import { DataBaseBase } from '../../src/src/mariadb-base';
 import { MappingCreate } from '../testmodels/mappingcreate';
 
 export async function testloaddeep() {
@@ -9,7 +8,7 @@ export async function testloaddeep() {
 
     const saved = await save(new ClWithMApping())
 
-    const cl = await load(ClWithMApping, saved[0])
+    const cl = await load(ClWithMApping, saved[0], [], { interceptArrayFunctions: true })
     cl.test.push(new TestModel("asd", "dfgdfgdfgsfrse"))
     cl.test.push(new TestModel("dfgdfg", "dfgdfgdh"))
     cl.test2 = new TestModel("dfgfg", "gjdj")

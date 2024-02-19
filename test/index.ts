@@ -12,10 +12,12 @@ import { testDbTransformer } from './test/test-db-transformer'
 import { testRecursiveMappings } from './test/test-recurisve-mappings'
 import { testMAp } from './testmodels/mapped-models/test-map-mapping'
 import { testlaodCalls } from './test/testloadcalls'
-import { DataBaseBase } from '../src/src/mariadb-base'
+import { DataBaseBase, openPools } from '../src/src/mariadb-base'
 config()
 
-const native = new DataBaseBase();
+const native = new DataBaseBase(undefined, 20);
+const infoSChemaBase = new DataBaseBase("information_schema");
+
 
 (async () => {
 
@@ -24,9 +26,9 @@ const native = new DataBaseBase();
 	await native.selectQuery<any>("ALTER TABLE `recursivemapping` DROP COLUMN IF EXISTS `testmodelRef`")
 
 	await updateDatabase(`${__dirname}/testmodels`)
-	const columns = await native.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["testmodel"], "information_schema")
-	const recursivemappingColumns = await native.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["recursivemapping"], "information_schema")
-
+	const columns = await infoSChemaBase.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["testmodel"])
+	const recursivemappingColumns = await infoSChemaBase.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["recursivemapping"])
+	infoSChemaBase.end()
 	if (columns.some(c => c.COLUMN_NAME == "recursiveMappings")) {
 		await native.selectQuery<any>("ALTER TABLE `testmodel` DROP COLUMN `recursiveMappings`")
 		throw "created OneToMany COlumn in source table"
@@ -55,5 +57,9 @@ const native = new DataBaseBase();
 
 		await testFnc();
 		console.log("done with " + testFnc.name)
+	}
+	await native.end()
+	while (openPools.size > 0) {
+		await new Promise(res => setTimeout(res, 10))
 	}
 })()

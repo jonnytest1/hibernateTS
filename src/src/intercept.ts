@@ -2,15 +2,23 @@
 import { update, pushUpdate } from './update';
 import { Mappings } from './interface/mapping-types';
 import { getDBConfig, getId } from './utils';
-import { ConstructorClass, ISaveAbleObject, Mapping } from './interface/mapping';
+import { ISaveAbleObject, Mapping } from './interface/mapping';
 import { remove, save } from '.';
-import { DataBaseBase } from './mariadb-base';
-import { ColumnOption, DBColumn } from './annotations/database-annotation';
+import { DataBaseBase, withPool } from './mariadb-base';
 import { ColumnDefinition } from './annotations/database-config';
-import { deleteFnc } from './delete';
 import { ExtendedMap } from './extended-map/extended-map';
 
-export function intercept<T>(object: ISaveAbleObject) {
+
+
+export interface InterceptParams {
+
+	/**
+	 * this will intercept methods like "filter" and "push" on arrays to automatically start synchronizing to the database (default false)
+	 * 
+	 */
+	interceptArrayFunctions?: boolean
+}
+export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}) {
 
 	if (Object.getOwnPropertyDescriptor(object, "_dbUpdates")) {
 		return
@@ -71,9 +79,10 @@ export function intercept<T>(object: ISaveAbleObject) {
 						hasSaved = true;
 						pushUpdate(object, save(value).then(async primaryKey => {
 							const sql = "UPDATE `" + db.table + "` SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
-							const deleteResult = await new DataBaseBase().sqlquery(sql, [primaryKey[0], getId(object)])
+
+							const deleteResult = await withPool(pool => pool.sqlquery(sql, [primaryKey[0], getId(object)]))
 						}))
-						intercept(value);
+						intercept(value, opts);
 
 					} else {
 						throw "unimplemented "
@@ -85,7 +94,8 @@ export function intercept<T>(object: ISaveAbleObject) {
 					pushUpdate(object, update(object, column.modelName, value))
 				}
 			}
-			interceptArray(object, column.modelName)
+			interceptArray(object, column.modelName, opts)
+
 		} else {
 			overwrites.set = (value) => {
 				throw "dont set primary"
@@ -95,7 +105,7 @@ export function intercept<T>(object: ISaveAbleObject) {
 	}
 }
 
-function interceptArray<T = any>(object: ISaveAbleObject & T, column: string) {
+function interceptArray<T = any>(object: ISaveAbleObject & T, column: string, opts: InterceptParams) {
 	const mapping = getDBConfig(object).columns[column].mapping;
 	const obj = object[column];
 	if (mapping && obj instanceof Array) {
@@ -131,7 +141,10 @@ function interceptArray<T = any>(object: ISaveAbleObject & T, column: string) {
 			})
 
 		}
-		applyProxies(obj)
+
+		if (opts.interceptArrayFunctions) {
+			applyProxies(obj)
+		}
 		if (mapping.type == Mappings.OneToMany) {
 			let oneToManyMApping: Mapping<Mappings.OneToMany> = mapping
 			if (oneToManyMApping.options.loadType == "map") {

@@ -8,7 +8,7 @@ export async function testmapping() {
 
 	const saved = await save(new ClWithMApping())
 
-	const mapping = await load(ClWithMApping, saved[0])
+	const mapping = await load(ClWithMApping, saved[0], [], { interceptArrayFunctions: true })
 	mapping.test2 = new TestModel("bva", "hallo")
 	mapping.test2.randomtext = "abc"
 	mapping.test.push(new TestModel("asd", "asdf"))

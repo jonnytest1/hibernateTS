@@ -1,5 +1,3 @@
-import { updateDatabase } from './db';
-
 export { load } from "./load"
 export { deleteFnc as remove } from './delete';
 export { intercept } from './intercept';

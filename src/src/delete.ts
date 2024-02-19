@@ -9,6 +9,8 @@ import { remove } from '.';
 
 export interface DeleteOptions {
 	deep?: boolean | Array<string>;
+
+	db?: DataBaseBase
 }
 export async function deleteFnc<T>(object: any, opts?: DeleteOptions): Promise<number>
 export async function deleteFnc<T>(descriptor: ConstructorClass<T>, primaryId: number | Array<number>, opts?: DeleteOptions): Promise<number>
@@ -32,70 +34,78 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 		dletionId = [primaryId];
 	}
 
+	const createDb = !opts.db;
+	if (createDb) {
+		opts.db = new DataBaseBase()
+	}
+	try {
+		let deleteCount = 0;
 
+		let objectToDelete: { [key: number]: T } = {};
+		for (let column of Object.values(db.columns)) {
 
-	let deleteCount = 0;
-
-	let objectToDelete: { [key: number]: T } = {};
-	for (let column of Object.values(db.columns)) {
-
-		const mapping = column.mapping;
-		if (mapping) {
-			const toDelete: Array<number> = []
-			for (const id of dletionId) {
-				if (typeof id !== "number") {
-					if (typeof id == "string") {
-						objectToDelete[id] = await load(descriptor, `\`${db.columns[db.modelPrimary].dbTableName}\` = ?`, [id], { deep: opts.deep, first: true });
-						if (!objectToDelete[id]) {
-							throw new Error("element to delete does not exist")
+			const mapping = column.mapping;
+			if (mapping) {
+				const toDelete: Array<number> = []
+				for (const id of dletionId) {
+					if (typeof id !== "number") {
+						if (typeof id == "string") {
+							objectToDelete[id] = await load(descriptor, `\`${db.columns[db.modelPrimary].dbTableName}\` = ?`, [id], { deep: opts.deep, first: true, db: opts.db });
+							if (!objectToDelete[id]) {
+								throw new Error("element to delete does not exist")
+							}
+						} else {
+							throw "invalid primary id"
 						}
-					} else {
-						throw "invalid primary id"
+					}
+					if (!objectToDelete[id]) {
+						objectToDelete[id] = await load(descriptor, id, undefined, { deep: opts.deep, db: opts.db });
+					}
+					if (!objectToDelete[id]) {
+						throw new Error("element to delete does not exist")
+					}
+
+					switch (mapping.type) {
+						case Mappings.OneToMany:
+							if (objectToDelete[id][column.modelName] instanceof Array) {
+								objectToDelete[id][column.modelName].forEach(subObj => {
+									if (opts.deep == true || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName))) {
+										toDelete.push(getId(subObj))
+									}
+								})
+							} else {
+								throw "missing implementation"
+							}
+							break;
+						case Mappings.OneToOne:
+							if (objectToDelete[id][column.modelName] && (opts.deep || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName)))) {
+								toDelete.push(getId(objectToDelete[id][column.modelName]))
+							}
+
+							break;
+						default:
+							throw "missing implementation"
 					}
 				}
-				if (!objectToDelete[id]) {
-					objectToDelete[id] = await load(descriptor, id, undefined, { deep: opts.deep });
+				if (toDelete.length) {
+					deleteCount += await deleteFnc(mapping.target, toDelete);
 				}
-				if (!objectToDelete[id]) {
-					throw new Error("element to delete does not exist")
-				}
-
-				switch (mapping.type) {
-					case Mappings.OneToMany:
-						if (objectToDelete[id][column.modelName] instanceof Array) {
-							objectToDelete[id][column.modelName].forEach(subObj => {
-								if (opts.deep == true || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName))) {
-									toDelete.push(getId(subObj))
-								}
-							})
-						} else {
-							throw "missing implementation"
-						}
-						break;
-					case Mappings.OneToOne:
-						if (objectToDelete[id][column.modelName] && (opts.deep || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName)))) {
-							toDelete.push(getId(objectToDelete[id][column.modelName]))
-						}
-
-						break;
-					default:
-						throw "missing implementation"
-				}
-			}
-			if (toDelete.length) {
-				deleteCount += await deleteFnc(mapping.target, toDelete);
 			}
 		}
-	}
 
-	let sql = `DELETE FROM \`${db.table}\` 
+		let sql = `DELETE FROM \`${db.table}\` 
 		WHERE `;
 
-	sql += dletionId.map(id => {
-		return ` ${db.modelPrimary} = ? `
-	}).join(' \nOR ');
+		sql += dletionId.map(id => {
+			return ` ${db.modelPrimary} = ? `
+		}).join(' \nOR ');
 
-	const result = await new DataBaseBase().sqlquery(sql, dletionId);
-	deleteCount += result.affectedRows;
-	return deleteCount;
+		const result = await opts.db.sqlquery(sql, dletionId);
+		deleteCount += result.affectedRows;
+		return deleteCount;
+	} finally {
+		if (createDb) {
+			opts.db.end()
+		}
+	}
 }

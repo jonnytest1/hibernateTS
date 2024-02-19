@@ -1,20 +1,22 @@
 
 import { DataBaseBase } from './mariadb-base';
-import { getId, getDBConfig, CustomOmit, shouldAddColumn } from './utils';
-import { update, pushUpdate } from './update';
-import { save } from './save';
-import { intercept } from './intercept';
+import { getId, getDBConfig, CustomOmit } from './utils';
+import { InterceptParams, intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass, ISaveAbleObject } from './interface/mapping';
-import { ColumnOption, OneToManyMappingOptions, Transformations } from './annotations/database-annotation';
-import { type } from 'os';
+import { ColumnOption, Transformations } from './annotations/database-annotation';
 import { ColumnDefinition } from './annotations/database-config';
 import { SqlCondition } from './sql-condition';
 
-export interface LoadOptions<T> {
+export interface LoadOptions<T> extends InterceptParams {
 	deep?: boolean | Array<string | SqlCondition> | { [key: string]: string | SqlCondition | { filter: string | SqlCondition, depths: number } },
 	first?: boolean,
 	idOnNonDeepOneToOne?: boolean
+
+	db?: DataBaseBase
+
+
+	dontInterceptSetters?: true
 }
 
 export interface LoadParams<T, F = string | number | SqlCondition | ((obj: T) => any), O = LoadOptions<T>> {
@@ -99,140 +101,152 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		sql += filter.build(params)
 	}
 
-	const dbResults = await new DataBaseBase().selectQuery<any>(sql, params)
+	const iniializePool = !options.db;
+	if (iniializePool) {
+		options.db = new DataBaseBase()
+	}
+	try {
+		const dbResults = await options.db.selectQuery<any>(sql, params)
 
-	const results: Array<T & ISaveAbleObject> = [];
+		const results: Array<T & ISaveAbleObject> = [];
 
-	await Promise.all(dbResults.map(async dbResult => {
-		const result: T & ISaveAbleObject = new findClass();
+		await Promise.all(dbResults.map(async dbResult => {
+			const result: T & ISaveAbleObject = new findClass();
 
-		if (typeof dbResult[db.modelPrimary] == "bigint") {
-			dbResult[db.modelPrimary] = Number(dbResult[db.modelPrimary])
-		}
-		result[db.modelPrimary] = dbResult[db.modelPrimary]
+			if (typeof dbResult[db.modelPrimary] == "bigint") {
+				dbResult[db.modelPrimary] = Number(dbResult[db.modelPrimary])
+			}
+			result[db.modelPrimary] = dbResult[db.modelPrimary]
 
-		for (let column in db.columns) {
-			const columnOptions: ColumnOption = db.columns[column].opts
-			const mapping = db.columns[column].mapping;
+			for (let column in db.columns) {
+				const columnOptions: ColumnOption = db.columns[column].opts
+				const mapping = db.columns[column].mapping;
 
-			let dbResultPropertyValue = dbResult[column];
-			if (columnOptions.transformations) {
-				const transformation: Transformations<typeof result[typeof column]> = columnOptions.transformations
-				dbResultPropertyValue = await transformation.loadFromDbToProperty(dbResultPropertyValue)
-			} else if (columnOptions.type == "boolean") {
-				dbResultPropertyValue = dbResultPropertyValue ? true : false
-			} else if (columnOptions.type == "number" && typeof dbResultPropertyValue == "bigint") {
-				dbResultPropertyValue = Number(dbResultPropertyValue)
+				let dbResultPropertyValue = dbResult[column];
+				if (columnOptions.transformations) {
+					const transformation: Transformations<typeof result[typeof column]> = columnOptions.transformations
+					dbResultPropertyValue = await transformation.loadFromDbToProperty(dbResultPropertyValue)
+				} else if (columnOptions.type == "boolean") {
+					dbResultPropertyValue = dbResultPropertyValue ? true : false
+				} else if (columnOptions.type == "number" && typeof dbResultPropertyValue == "bigint") {
+					dbResultPropertyValue = Number(dbResultPropertyValue)
+				}
+
+				result[column] = dbResultPropertyValue;
 			}
 
-			result[column] = dbResultPropertyValue;
-		}
-
-		results.push(result);
-	}))
+			results.push(result);
+		}))
 
 
-	await Promise.all(Object.keys(db.columns).map(async columnName => {
-		const column: ColumnDefinition<string> = db.columns[columnName]
-		const columnOptions: ColumnOption = column.opts
-		const mapping = column.mapping;
+		await Promise.all(Object.keys(db.columns).map(async columnName => {
+			const column: ColumnDefinition<string> = db.columns[columnName]
+			const columnOptions: ColumnOption = column.opts
+			const mapping = column.mapping;
 
-		const idsToLoad: { [id: number]: Array<unknown> } = {}
+			const idsToLoad: { [id: number]: Array<unknown> } = {}
 
-		await Promise.all(results.map(async result => {
-			if (mapping) {
-				if (mapping.type == Mappings.OneToMany) {
-					result[columnName] = [] as any;
-				}
-				if (shouldLoadColumn(options, columnName)) {
-
-					//let nextOptions = nextLevelOptions(options)
+			await Promise.all(results.map(async result => {
+				if (mapping) {
 					if (mapping.type == Mappings.OneToMany) {
-						idsToLoad[getId(result)] ??= [];
-						idsToLoad[getId(result)].push(result)
-						//const items = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
-
-						//result[columnName] = items
-
-					} else if (mapping.type == Mappings.OneToOne) {
-						if (result[columnName]) {
-							//const targetConfig = getDBConfig(mapping.target);
-
-							idsToLoad[result[columnName]] ??= []
-							idsToLoad[result[columnName]].push(result)
-							//const results = await load<any>(mapping.target, `${targetConfig.modelPrimary} = ?${additionalFilter}`, [result[columnName]], { ...nextOptions, first: true })
-							//result[columnName] = results;
-						}
-					} else {
-						throw new Error("missing mapping")
+						result[columnName] = [] as any;
 					}
-				} else if (mapping.type == Mappings.OneToOne && !options.idOnNonDeepOneToOne) {
-					//reset key when not loaded
-					result[columnName] = null;
+					if (shouldLoadColumn(options, columnName)) {
+
+						//let nextOptions = nextLevelOptions(options)
+						if (mapping.type == Mappings.OneToMany) {
+							idsToLoad[getId(result)] ??= [];
+							idsToLoad[getId(result)].push(result)
+							//const items = await load<any>(mapping.target, `${mapping.column.dbTableName} = ?${additionalFilter}`, [getId(result)], { ...nextOptions, first: false }) as any;
+
+							//result[columnName] = items
+
+						} else if (mapping.type == Mappings.OneToOne) {
+							if (result[columnName]) {
+								//const targetConfig = getDBConfig(mapping.target);
+
+								idsToLoad[result[columnName]] ??= []
+								idsToLoad[result[columnName]].push(result)
+								//const results = await load<any>(mapping.target, `${targetConfig.modelPrimary} = ?${additionalFilter}`, [result[columnName]], { ...nextOptions, first: true })
+								//result[columnName] = results;
+							}
+						} else {
+							throw new Error("missing mapping")
+						}
+					} else if (mapping.type == Mappings.OneToOne && !options.idOnNonDeepOneToOne) {
+						//reset key when not loaded
+						result[columnName] = null;
+					}
+				}
+			}))
+
+
+			const idArrayAndParams = Object.keys(idsToLoad);
+			if (idArrayAndParams.length) {
+				let additionalFilter = "";
+				const idParams = new Array(idArrayAndParams.length).fill(`?`).join(",")
+				if (options.deep && options.deep[columnName]) {
+					let filter = options.deep[columnName]
+					if (filter && filter instanceof SqlCondition) {
+						filter = filter.build(idArrayAndParams)
+					}
+					if (typeof filter !== "string") {
+						filter = filter.filter
+					}
+					if (filter && filter instanceof SqlCondition) {
+						filter = filter.build(idArrayAndParams)
+					}
+					if (typeof filter !== "string") {
+						throw new Error("filter not a string at adding")
+					}
+					additionalFilter = ` AND (${filter})`;
+				}
+				let nextOptions = nextLevelOptions(options)
+				if (mapping.type === Mappings.OneToMany) {
+					const oneToManyItems = await load<any>(mapping.target, `\`${mapping.column.dbTableName}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions, first: false }) as any;
+
+					for (const item of oneToManyItems) {
+						const parentObjects = idsToLoad[item[mapping.column.dbTableName]]
+						parentObjects.forEach(obj => {
+							obj[columnName] = obj[columnName] || []
+							obj[columnName].push(item);
+						})
+					}
+
+					//result[columnName] = items
+				} else if (mapping.type == Mappings.OneToOne) {
+					const targetConfig = getDBConfig(mapping.target)
+					const oneToOneItems = await load<any>(mapping.target, `\`${targetConfig.modelPrimary}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions })
+
+					for (const item of oneToOneItems) {
+						const parentObjects = idsToLoad[item[targetConfig.modelPrimary]]
+						parentObjects.forEach(obj => {
+							obj[columnName] = item;
+						});
+					}
+				} else {
+					throw new Error("missing mapping")
 				}
 			}
 		}))
 
-
-		const idArrayAndParams = Object.keys(idsToLoad);
-		if (idArrayAndParams.length) {
-			let additionalFilter = "";
-			const idParams = new Array(idArrayAndParams.length).fill(`?`).join(",")
-			if (options.deep && options.deep[columnName]) {
-				let filter = options.deep[columnName]
-				if (filter && filter instanceof SqlCondition) {
-					filter = filter.build(idArrayAndParams)
-				}
-				if (typeof filter !== "string") {
-					filter = filter.filter
-				}
-				if (filter && filter instanceof SqlCondition) {
-					filter = filter.build(idArrayAndParams)
-				}
-				if (typeof filter !== "string") {
-					throw new Error("filter not a string at adding")
-				}
-				additionalFilter = ` AND (${filter})`;
-			}
-			let nextOptions = nextLevelOptions(options)
-			if (mapping.type === Mappings.OneToMany) {
-				const oneToManyItems = await load<any>(mapping.target, `\`${mapping.column.dbTableName}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions, first: false }) as any;
-
-				for (const item of oneToManyItems) {
-					const parentObjects = idsToLoad[item[mapping.column.dbTableName]]
-					parentObjects.forEach(obj => {
-						obj[columnName] = obj[columnName] || []
-						obj[columnName].push(item);
-					})
-				}
-
-				//result[columnName] = items
-			} else if (mapping.type == Mappings.OneToOne) {
-				const targetConfig = getDBConfig(mapping.target)
-				const oneToOneItems = await load<any>(mapping.target, `\`${targetConfig.modelPrimary}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions })
-
-				for (const item of oneToOneItems) {
-					const parentObjects = idsToLoad[item[targetConfig.modelPrimary]]
-					parentObjects.forEach(obj => {
-						obj[columnName] = item;
-					});
-				}
-			} else {
-				throw new Error("missing mapping")
+		for (let result of results) {
+			result.___persisted = true
+			if (options.dontInterceptSetters !== true) {
+				intercept(result, options);
 			}
 		}
-	}))
 
-	for (let result of results) {
-		result.___persisted = true
-		intercept(result);
+
+		if (returnAsArray(filter, options)) {
+			return results;
+		}
+		return results[0];
+	} finally {
+		if (iniializePool) {
+			options.db.end()
+		}
 	}
-
-
-	if (returnAsArray(filter, options)) {
-		return results;
-	}
-	return results[0];
 
 }
 

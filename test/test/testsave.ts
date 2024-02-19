@@ -13,7 +13,7 @@ export async function testsave() {
     await save(obj);
 
 
-    const laodedObj = await load(ClWithMApping, obj.id, [], { deep: true });
+    const laodedObj = await load(ClWithMApping, obj.id, [], { deep: true, interceptArrayFunctions: true });
 
     if (!laodedObj.test2) {
         throw "didnt save or load mapping"

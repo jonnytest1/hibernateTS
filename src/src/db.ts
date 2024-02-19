@@ -3,7 +3,7 @@ import { join } from 'path';
 
 import { DataBaseConfig } from './annotations/database-config';
 import { Mappings } from './interface/mapping-types';
-import { DataBaseBase } from './mariadb-base';
+import { DataBaseBase, withPool } from './mariadb-base';
 import { getDBConfig } from './utils';
 
 
@@ -13,30 +13,37 @@ import { getDBConfig } from './utils';
  */
 export async function updateDatabase(modelRootPath: string, save = true) {
 
-    const db = new DataBaseBase()
-    const classes = await loadFiles(modelRootPath);
-    await new Promise(res => setTimeout(res, 20))
-    await Promise.all(classes.map(async classObj => {
-        await Promise.all(Object.values(classObj)
-            .filter(exp => getDBConfig(exp))
-            .map(async dbClass => {
+    const db = new DataBaseBase("information_schema", 20)
+    const tablesDb = new DataBaseBase(undefined, 20)
+    try {
+        const classes = await loadFiles(modelRootPath);
+        await new Promise(res => setTimeout(res, 20))
+        await Promise.all(classes.map(async classObj => {
+            await Promise.all(Object.values(classObj)
+                .filter(exp => getDBConfig(exp))
+                .map(async dbClass => {
 
-                const dbConfig = getDBConfig(dbClass);
-                const [tableData, columnData] = await Promise.all([
-                    db.selectQuery<any>("SELECT * FROM `TABLES` WHERE `TABLES`.TABLE_NAME = ? ", [dbConfig.table], "information_schema"),
-                    db.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", [dbConfig.table], "information_schema")
-                ])
-                if (tableData.length == 0) {
-                    await createTable(dbConfig, columnData, db)
-                } else {
-                    await alterTable(dbConfig, columnData, db)
+                    const dbConfig = getDBConfig(dbClass);
+                    const [tableData, columnData] = await Promise.all([
+                        db.selectQuery<any>("SELECT * FROM `TABLES` WHERE `TABLES`.TABLE_NAME = ? ", [dbConfig.table]),
+                        db.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", [dbConfig.table])
+                    ])
+                    if (tableData.length == 0) {
+                        await createTable(dbConfig, columnData, tablesDb)
+                    } else {
+                        await alterTable(dbConfig, columnData, tablesDb)
 
-                }
-            })
-        )
-    }))
+                    }
+                })
+            )
+        }))
 
-    console.log("finsihed db check")
+        console.log("finsihed db check")
+
+    } finally {
+        db.end()
+        tablesDb.end()
+    }
 }
 
 async function alterTable(dbConfig: DataBaseConfig, columnData: Array<any>, db: DataBaseBase) {
