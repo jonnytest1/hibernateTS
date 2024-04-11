@@ -35,6 +35,11 @@ export class TestModel {
 	@mapping(Mappings.OneToMany, RecursiveMapping, "testmodelRef")
 	recursiveMappings: Array<RecursiveMapping> = []
 
+	@column({
+		type: "date"
+	})
+	timestamp: Date
+
 	constructor(id?, col?) {
 		this.id = id
 		this.col2 = col;

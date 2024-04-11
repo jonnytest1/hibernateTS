@@ -4,7 +4,6 @@ import { DataBaseBase } from './mariadb-base';
 import { load } from './load';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass } from './interface/mapping';
-import { remove } from '.';
 
 
 export interface DeleteOptions {

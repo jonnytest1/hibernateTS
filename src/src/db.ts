@@ -279,8 +279,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
         columnSql += "    TINYINT "
 
     } else if (colDbOpts.type == "date") {
-        debugger;
-
+        columnSql += "    DATETIME "
     } else if (colDbOpts.type == "binding") {
         if (columnConfig.mapping) {
             if (columnConfig.mapping.type == Mappings.OneToMany) {

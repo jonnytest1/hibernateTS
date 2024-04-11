@@ -8,6 +8,7 @@ export async function testsave() {
 
     const obj = new ClWithMApping("savetest");
     obj.test2 = new TestModel("abcee", "idontcare")
+    obj.test2.timestamp = new Date(1712856663261)
     obj.test2.booleanIncTest = false
     obj.test.push(new TestModel("abceefgh", "idontcareeither"))
     await save(obj);
