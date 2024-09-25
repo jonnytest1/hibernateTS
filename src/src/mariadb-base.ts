@@ -12,6 +12,14 @@ interface DatabaseResult {
 export const openPools = new Map<mariadb.Pool, string>()
 
 
+
+let defaultOpts: Partial<mariadb.PoolConfig>
+export function setMariaDbPoolDefaults(opts: Partial<mariadb.PoolConfig>) {
+	defaultOpts = opts
+}
+
+
+
 export class DataBaseBase {
 
 	static queryCt = 0
@@ -26,6 +34,8 @@ export class DataBaseBase {
 		const password = process.env.DB_PASSWORD;
 
 		const config: mariadb.PoolConfig = {}
+
+		Object.assign(config, defaultOpts)
 
 		if (typeof poolSize === "number") {
 			config.connectionLimit = poolSize
