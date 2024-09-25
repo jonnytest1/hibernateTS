@@ -120,11 +120,9 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuer
             } else if (serverType == "text") {
                 if (serverSize == "large") {
                     //medium / small are both varchar
-                    if (dbType == "varchar") {
+                    if (dbType == "varchar" || dbType == "text") {
                         needsAlter = true;
                         sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` MEDIUMTEXT,\r\n'
-                    } else if (dbType == "text") {
-                        //fits
                     } else {
                         console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                     }

@@ -18,13 +18,32 @@ export class DataBaseBase {
 
 
 	pool: mariadb.Pool
-	constructor(database?: string, poolSize?: number) {
+	constructor(database?: string, poolSize?: number | Partial<mariadb.PoolConfig>) {
 		const db = database || process.env.DB_NAME;
 		const port = +process.env.DB_PORT;
 		const user = process.env.DB_USER;
 		const url = process.env.DB_URL;
 		const password = process.env.DB_PASSWORD;
-		this.pool = mariadb.createPool({ host: url, user, connectionLimit: poolSize ?? 5, password, port, database: db, });
+
+		const config: mariadb.PoolConfig = {}
+
+		if (typeof poolSize === "number") {
+			config.connectionLimit = poolSize
+		} else if (!poolSize) {
+			config.connectionLimit = 5
+		} else {
+			Object.assign(config, poolSize)
+		}
+
+
+		this.pool = mariadb.createPool({
+			host: url,
+			user,
+			password,
+			port,
+			database: db,
+			...config
+		});
 
 		try {
 			throw new Error("stack")
@@ -42,13 +61,12 @@ export class DataBaseBase {
 		try {
 			connection = await this.pool.getConnection();
 			const result = await callback(connection);
-			connection.release()
+
 			connection.end();
 			//await pool.end();
 			return result;
 		} catch (e) {
 			if (connection) {
-				connection.release()
 				await connection.end()
 			}
 			//if (pool) {
@@ -58,7 +76,6 @@ export class DataBaseBase {
 			throw e
 		} finally {
 			if (connection) {
-				connection.release()
 				connection.end()
 			}
 		}
