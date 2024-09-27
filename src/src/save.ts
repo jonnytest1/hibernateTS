@@ -60,7 +60,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 					continue
 				}
 				if (db.columns[dbKey].opts && "transformations" in db.columns[dbKey].opts) {
-					const columnOptions: ColumnOption = db.columns[dbKey].opts
+					const columnOptions: ColumnOption = db.columns[dbKey].opts as ColumnOption
 					if (columnOptions.transformations) {
 						params.push(await columnOptions.transformations.saveFromPropertyToDb(value))
 						continue

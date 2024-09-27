@@ -20,11 +20,17 @@ export function setMariaDbPoolDefaults(opts: Partial<mariadb.PoolConfig>) {
 
 
 
+type ConnectionLog = {
+	timestamp: number;
+	connectionTs?: number;
+	closed?: number;
+};
+
 export class DataBaseBase {
 
 	static queryCt = 0
 
-
+	poolConnections: Array<ConnectionLog> = []
 	pool: mariadb.Pool
 	constructor(database?: string, poolSize?: number | Partial<mariadb.PoolConfig>) {
 		const db = database || process.env.DB_NAME;
@@ -68,17 +74,28 @@ export class DataBaseBase {
 		DataBaseBase.queryCt++;
 
 		let connection: mariadb.PoolConnection;
+		const connectionLog: ConnectionLog = {
+			timestamp: Date.now()
+		}
+		this.poolConnections.push(connectionLog)
+		while (this.poolConnections[0] && (this.poolConnections[0].timestamp < (Date.now() - (1000 * 60 * 5)))) {
+			this.poolConnections.shift()
+		}
 		try {
 			connection = await this.pool.getConnection();
+			connectionLog.connectionTs = Date.now()
 			const result = await callback(connection);
 
-			connection.end();
+			connection.end().then(() => {
+				connectionLog.closed = Date.now()
+			});
 			//await pool.end();
 			return result;
 		} catch (e) {
 			if (connection) {
 				await connection.end()
 			}
+			e.connectionLog = JSON.parse(JSON.stringify(this.poolConnections))
 			//if (pool) {
 			//await pool.end()
 			//}
