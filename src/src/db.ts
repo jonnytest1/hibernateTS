@@ -182,7 +182,9 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQue
             sql += colSql;
         }
     }
-    sql += "	PRIMARY KEY (`" + dbConfig.modelPrimary + "`)\n"
+    if (dbConfig.modelPrimary) {
+        sql += "	PRIMARY KEY (`" + dbConfig.modelPrimary + "`)\n"
+    }
     sql += ") COLLATE='utf8mb4_general_ci' ENGINE=InnoDB ;"
     console.log(sql);
     await db.sqlquery(sql);

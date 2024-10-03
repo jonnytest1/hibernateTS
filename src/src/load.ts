@@ -30,10 +30,10 @@ export interface LoadParams<T, F = string | number | SqlCondition | ((obj: T) =>
 export type SqlParameter = string | number
 
 
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any | LoadParams<T, (obj: T) => any, { first: true } & CustomOmit<LoadOptions<T>, "first">>, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: ((obj: T) => any) | LoadParams<T, (obj: T) => any, { first: true } & CustomOmit<LoadOptions<T>, "first">>, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | LoadParams<T, string, { first: true } & CustomOmit<LoadOptions<T>, "first">>, parameters: Array<string | number> | string, options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | LoadParams<T, string>, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: (obj: T) => any | LoadParams<T, (obj: T) => any>, parameters?: undefined | undefined[], options?: LoadOptions<T>): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: ((obj: T) => any) | LoadParams<T, (obj: T) => any>, parameters?: undefined | undefined[], options?: LoadOptions<T>): Promise<Array<T>>;
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number | LoadParams<T, number>, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<T>;
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | number | ((obj: T) => any) | LoadParams<T>, parameters: Array<string | number> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
 	const db = getDBConfig<T>(findClass);
