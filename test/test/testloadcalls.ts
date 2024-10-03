@@ -1,5 +1,5 @@
 import { load, save } from '../../src/src'
-import { DataBaseBase } from '../../src/src/mariadb-base'
+import { MariaDbBase } from '../../src/src/dbs/mariadb-base'
 import { SqlCondition } from '../../src/src/sql-condition'
 import { ClWithMApping } from '../testmodels/cl-with-mapping'
 import { TestModel } from '../testmodels/test-model'
@@ -17,11 +17,11 @@ export async function testlaodCalls() {
     const saved = await save([cl1, cl2])
 
 
-    let queryCount = DataBaseBase.queryCt
+    let queryCount = MariaDbBase.queryCt
     const loaded = await load(ClWithMApping, "TRUE=TRUE", undefined, {
         deep: ["test"]
     })
-    const newCount = DataBaseBase.queryCt
+    const newCount = MariaDbBase.queryCt
     if (queryCount + 2 !== newCount) {
         throw "didnt load stuff efficiently"
     }
@@ -29,7 +29,7 @@ export async function testlaodCalls() {
     const loadedWithCondition = await load(ClWithMApping, SqlCondition.ALL, undefined, {
         deep: ["test"]
     })
-    if (newCount + 2 !== DataBaseBase.queryCt) {
+    if (newCount + 2 !== MariaDbBase.queryCt) {
         throw "didnt load stuff efficiently"
     }
     for (const loadedMappings of [loaded, loadedWithCondition]) {
@@ -50,13 +50,13 @@ export async function testlaodCalls() {
 
 
 
-    let queryCount2 = DataBaseBase.queryCt
+    let queryCount2 = MariaDbBase.queryCt
     const loadedObj = await load(ClWithMApping, {
         options: {
             deep: ["test"]
         }
     });
-    const newCount2 = DataBaseBase.queryCt
+    const newCount2 = MariaDbBase.queryCt
     if (queryCount2 + 2 !== newCount2) {
         throw "didnt load stuff efficiently"
     }

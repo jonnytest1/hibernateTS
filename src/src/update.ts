@@ -1,5 +1,5 @@
 
-import { DataBaseBase } from './mariadb-base';
+import { MariaDbBase } from './dbs/mariadb-base';
 import { save } from './save';
 import { getId, getDBConfig } from './utils';
 import { Mappings } from './interface/mapping-types';
@@ -21,7 +21,7 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 		value = await options.transformations.saveFromPropertyToDb(value)
 
 	}
-	const dbBase = new DataBaseBase()
+	const dbBase = new MariaDbBase()
 	try {
 		if (mapping) {
 			if (mapping.type == Mappings.OneToMany) {

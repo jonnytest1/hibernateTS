@@ -4,7 +4,7 @@ import { Mappings } from './interface/mapping-types';
 import { getDBConfig, getId } from './utils';
 import { ISaveAbleObject, Mapping } from './interface/mapping';
 import { remove, save } from '.';
-import { DataBaseBase, withPool } from './mariadb-base';
+import { withMariaDbPool } from './dbs/mariadb-base';
 import { ColumnDefinition } from './annotations/database-config';
 import { ExtendedMap } from './extended-map/extended-map';
 
@@ -80,7 +80,7 @@ export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}
 						pushUpdate(object, save(value).then(async primaryKey => {
 							const sql = "UPDATE `" + db.table + "` SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
 
-							const deleteResult = await withPool(pool => pool.sqlquery(sql, [primaryKey[0], getId(object)]))
+							const deleteResult = await withMariaDbPool(pool => pool.sqlquery(sql, [primaryKey[0], getId(object)]))
 						}))
 						intercept(value, opts);
 

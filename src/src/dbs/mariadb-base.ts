@@ -1,12 +1,8 @@
 import * as mariadb from "mariadb";
-import { Exception } from './exception';
+import { Exception } from '../exception';
+import type { DataBaseBase, DataBaseBaseStatic, DatabaseResult } from './database-base';
+import { staticImplements } from '../annotations/static-implements';
 
-interface DatabaseResult {
-	insertId: BigInt,
-	affectedRows: number,
-
-	warningStatus: number
-}
 
 
 export const openPools = new Map<mariadb.Pool, string>()
@@ -25,10 +21,11 @@ type ConnectionLog = {
 	connectionTs?: number;
 	closed?: number;
 };
-
-export class DataBaseBase {
+@staticImplements<DataBaseBase["constructor"]>()
+export class MariaDbBase implements DataBaseBase {
 
 	static queryCt = 0
+	static mediumTextStr = "MEDIUMTEXT"
 
 	poolConnections: Array<ConnectionLog> = []
 	pool: mariadb.Pool
@@ -67,11 +64,12 @@ export class DataBaseBase {
 			openPools.set(this.pool, e.stack)
 		}
 	}
+	['constructor']: DataBaseBaseStatic;
 
 
 
 	private async query<T>(callback: (pool: mariadb.Connection) => Promise<T>): Promise<T> {
-		DataBaseBase.queryCt++;
+		MariaDbBase.queryCt++;
 
 		let connection: mariadb.PoolConnection;
 		const connectionLog: ConnectionLog = {
@@ -137,8 +135,8 @@ export class DataBaseBase {
 
 
 
-export async function withPool<T>(consumer: (pool: DataBaseBase) => Promise<T>) {
-	const base = new DataBaseBase()
+export async function withMariaDbPool<T>(consumer: (pool: MariaDbBase) => Promise<T>) {
+	const base = new MariaDbBase()
 	try {
 		return await consumer(base)
 	} finally {

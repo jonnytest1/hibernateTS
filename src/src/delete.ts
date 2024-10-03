@@ -1,9 +1,10 @@
 
 import { getId, getDBConfig } from './utils';
-import { DataBaseBase } from './mariadb-base';
+import { MariaDbBase } from './dbs/mariadb-base';
 import { load } from './load';
 import { Mappings } from './interface/mapping-types';
 import { ConstructorClass } from './interface/mapping';
+import type { DataBaseBase } from './dbs/database-base';
 
 
 export interface DeleteOptions {
@@ -35,7 +36,7 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 
 	const createDb = !opts.db;
 	if (createDb) {
-		opts.db = new DataBaseBase()
+		opts.db = new MariaDbBase()
 	}
 	try {
 		let deleteCount = 0;

@@ -1,5 +1,5 @@
 
-import { DataBaseBase } from './mariadb-base';
+import { MariaDbBase } from './dbs/mariadb-base';
 import { getId, getDBConfig, CustomOmit } from './utils';
 import { InterceptParams, intercept } from './intercept';
 import { Mappings } from './interface/mapping-types';
@@ -7,6 +7,7 @@ import { ConstructorClass, ISaveAbleObject } from './interface/mapping';
 import { ColumnOption, Transformations } from './annotations/database-annotation';
 import { ColumnDefinition } from './annotations/database-config';
 import { SqlCondition } from './sql-condition';
+import type { DataBaseBase } from './dbs/database-base';
 
 export interface LoadOptions<T> extends InterceptParams {
 	deep?: boolean | Array<string | SqlCondition> | { [key: string]: string | SqlCondition | { filter: string | SqlCondition, depths: number } },
@@ -103,7 +104,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 	const iniializePool = !options.db;
 	if (iniializePool) {
-		options.db = new DataBaseBase()
+		options.db = new MariaDbBase()
 	}
 	try {
 		const dbResults = await options.db.selectQuery<any>(sql, params)

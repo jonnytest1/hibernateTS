@@ -3,8 +3,9 @@ import { join } from 'path';
 
 import { DataBaseConfig } from './annotations/database-config';
 import { Mappings } from './interface/mapping-types';
-import { DataBaseBase, withPool } from './mariadb-base';
+import { MariaDbBase } from './dbs/mariadb-base';
 import { getDBConfig } from './utils';
+import type { DataBaseBase, DataBaseBaseStatic } from './dbs/database-base';
 
 
 type ColumnQuery = {
@@ -15,22 +16,36 @@ type ColumnQuery = {
 }
 
 
+type DatabaseGEnerator = DataBaseBaseStatic
+
+
+interface UpdateOpts {
+    dbPoolGEnerator?: DatabaseGEnerator
+
+    modelDb?: string
+}
+
+
 /**
  * change database to fit models
  * @param save 
  */
-export async function updateDatabase(modelRootPath: string, save = true) {
+export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {}) {
 
-    const modelDb = process.env.DB_NAME
-    const db = new DataBaseBase("information_schema", 20)
-    const tablesDb = new DataBaseBase(modelDb, 20)
+    const modelDb = opts.modelDb ?? process.env.DB_NAME
+
+    const DbBaseClass = opts.dbPoolGEnerator ?? MariaDbBase
+
+
+    const db = new DbBaseClass("information_schema", 4)
+    let tablesDb: DataBaseBase
     try {
         const [classes, tableSet, columnData] = await Promise.all([
             loadFiles(modelRootPath),
-            db.selectQuery<{ TABLE_NAME: string }>("SELECT TABLE_NAME FROM `TABLES` WHERE TABLE_SCHEMA = ?", [modelDb]).then(db => {
+            db.selectQuery<{ TABLE_NAME: string }>("SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = ?", [modelDb]).then(db => {
                 return new Set(db.map(table => table.TABLE_NAME))
             }),
-            db.selectQuery<ColumnQuery>("SELECT * FROM `COLUMNS` WHERE TABLE_SCHEMA = ? ", [modelDb]).then(columns => {
+            db.selectQuery<ColumnQuery>("SELECT * FROM information_schema.`COLUMNS` WHERE TABLE_SCHEMA = ? ", [modelDb]).then(columns => {
                 const tableColumnMap: { [table: string]: Array<ColumnQuery> } = {}
 
                 for (const column of columns) {
@@ -43,6 +58,7 @@ export async function updateDatabase(modelRootPath: string, save = true) {
         await new Promise(res => setTimeout(res, 20))
 
 
+        tablesDb = new DbBaseClass(modelDb, classes.length * 2)
         await Promise.all(classes.map(async classObj => {
             await Promise.all(Object.values(classObj)
                 .filter(exp => getDBConfig(exp))
@@ -63,7 +79,7 @@ export async function updateDatabase(modelRootPath: string, save = true) {
 
     } finally {
         db.end()
-        tablesDb.end()
+        tablesDb?.end()
     }
 }
 
@@ -90,7 +106,6 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuer
             if (serverColumn.opts && serverColumn.opts.size == "small") {
                 return;
             }
-
             const serverType = serverColumn.opts.type
             const serverSize = serverColumn.opts.size;
             const dbType = dbColumn.DATA_TYPE;
@@ -120,9 +135,9 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuer
             } else if (serverType == "text") {
                 if (serverSize == "large") {
                     //medium / small are both varchar
-                    if (dbType == "varchar" || dbType == "text") {
+                    if ((dbType == "varchar" || dbType == "text") && dbType.toUpperCase() !== db.constructor.mediumTextStr) {
                         needsAlter = true;
-                        sql += '	CHANGE COLUMN `' + columnName + '` `' + columnName + '` MEDIUMTEXT,\r\n'
+                        sql += `	CHANGE COLUMN \`${columnName}\` \`${columnName}\` ${db.constructor.mediumTextStr},\r\n`
                     } else {
                         console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                     }
@@ -152,6 +167,7 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuer
 
     sql = sql.substr(0, sql.length - 3) + ";"
     if (needsAlter) {
+        debugger
         console.log(sql);
         await db.sqlquery(sql);
     }

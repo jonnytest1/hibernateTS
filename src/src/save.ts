@@ -1,10 +1,11 @@
 
 import { getRepresentation, setId, getId, getDBConfig, isPersisted } from './utils';
-import { DataBaseBase } from './mariadb-base';
+import { MariaDbBase } from './dbs/mariadb-base';
 import { Mappings } from './interface/mapping-types';
 import { Mapping, ISaveAbleObject } from './interface/mapping';
 import { ColumnOption } from './annotations/database-annotation';
 import { ExtendedMap } from './extended-map/extended-map';
+import type { DataBaseBase } from './dbs/database-base';
 
 interface SaveOptions {
 	/**
@@ -33,7 +34,7 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 	}
 	const initializePool = !options.db
 	if (initializePool) {
-		options.db = new DataBaseBase()
+		options.db = new MariaDbBase()
 	}
 
 	try {
