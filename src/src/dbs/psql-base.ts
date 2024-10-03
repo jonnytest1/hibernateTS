@@ -14,6 +14,9 @@ interface PSqlBaseEnv {
     PSQL_URL: string
     PQSL_PORT: string
     PSQL_PWD: string
+
+    PSQL_USER: string
+    PSQL_DB: string
     [key: string]: string
 
 }
@@ -40,8 +43,8 @@ export class PsqlBase implements DataBaseBase {
         poolOptinos.host = env.PSQL_URL
         poolOptinos.port = +env.PQSL_PORT
         poolOptinos.password = env.PSQL_PWD
-        poolOptinos.user = "postgres"
-        poolOptinos.database = "postgres"
+        poolOptinos.user = env.PSQL_USER ?? "postgres"
+        poolOptinos.database = env.PSQL_DB ?? "postgres"
 
         if (count !== undefined) {
             poolOptinos.max = count
