@@ -20,11 +20,15 @@ export type DataBaseBase = {
 
 
 export interface QueryStrings {
+    insertQuery?(sql: string, context: DataBaseConfig): string;
     mediumTextStr: string;
 
     constraintName(constraint: Constraint<unknown>, context: DataBaseConfig): string
 
     uniqueConstraintSql(columns: Constraint<unknown>, name: string | undefined, context: DataBaseConfig): string;
+
+
+    duplicateKeyUpdate(escapedKeys: Array<string>, context: DataBaseConfig): string
 }
 
 export type DataBaseBaseStatic = {

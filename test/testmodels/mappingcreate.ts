@@ -1,7 +1,7 @@
 
 import { column, mapping, Mappings, primary, table } from '../../src/src';
 import type { ClWithMApping } from './cl-with-mapping';
-
+// hibernatets
 @table()
 export class MappingCreate {
 

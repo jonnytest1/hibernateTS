@@ -1,10 +1,10 @@
-import { load, save } from '../../src/src'
+import { load, save, type DataBaseBase } from '../../src/src'
 import { MariaDbBase } from '../../src/src/dbs/mariadb-base'
 import { SqlCondition } from '../../src/src/sql-condition'
 import { ClWithMApping } from '../testmodels/cl-with-mapping'
 import { TestModel } from '../testmodels/test-model'
 
-export async function testlaodCalls() {
+export async function testlaodCalls(pool: DataBaseBase) {
 
     const cl1 = new ClWithMApping()
     cl1.test.push(new TestModel(1, "123"))

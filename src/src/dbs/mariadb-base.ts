@@ -24,6 +24,10 @@ export const mariaDbQueryStrings: QueryStrings = {
 		const columnsStr = constraint.columns.map(c => `\`${c}\``).join(",")
 		return `UNIQUE INDEX \`${name}\` (${columnsStr})`
 	},
+	duplicateKeyUpdate(keys, context) {
+		return ' ON DUPLICATE KEY UPDATE ' + keys
+			.map(key => `${key} = VALUES(${key})`).join(",")
+	},
 }
 
 type ConnectionLog = {

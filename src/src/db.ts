@@ -241,7 +241,7 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQue
     } else {
         sql = sql.trimEnd().replace(/,$/, "")
     }
-    debugger
+
     sql += ") COLLATE='utf8mb4_general_ci' ENGINE=InnoDB ;"
     console.log(sql);
     await db.sqlquery(sql);

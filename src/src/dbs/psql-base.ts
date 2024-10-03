@@ -32,6 +32,32 @@ const psqlQueryStrings: QueryStrings = {
         const columnsStr = constraint.columns.map(c => `"${c}"`).join(",")
         return `CONSTRAINT "${name}" UNIQUE (${columnsStr})`
     },
+    duplicateKeyUpdate(keys, context) {
+        const constraints = []
+
+        if (context.modelPrimary) {
+            constraints.push(`ON CONFLICT ("${context.modelPrimary}") DO UPDATE 
+                SET ${keys.map(k => `${k} = excluded.${k} `)}`)
+        }
+
+        if (context.options?.constraints?.length) {
+            for (const constraint of context.options?.constraints) {
+                const colsStr = constraint.columns.map(c => `"${c}"`).join(",")
+
+                constraints.push(`ON CONFLICT (${colsStr}) DO UPDATE 
+                    SET ${keys.map(k => `${k} = excluded.${k} `)}`)
+            }
+        }
+
+        return constraints.join("\n")
+    },
+
+    insertQuery(sql, context) {
+        if (context.modelPrimary) {
+            return `${sql} RETURNING ("${context.modelPrimary}")`
+        }
+        return sql
+    },
 }
 
 
@@ -133,7 +159,7 @@ export class PsqlBase implements DataBaseBase {
 
             return {
                 affectedRows: result.rowCount,
-                insertId: queryString.startsWith("INSERT") ? BigInt(result.rows[0].id) : null,
+                insertId: queryString.startsWith("INSERT") && result.rows[0]?.id ? BigInt(result.rows[0]?.id) : null,
                 warningStatus: 0
 
             }
@@ -156,10 +182,6 @@ export class PsqlBase implements DataBaseBase {
         queryString = queryString.replace(/`/g, `"`);
         if (queryString.includes("CHANGE")) {
             debugger
-        }
-
-        if (queryString.startsWith("INSERT")) {
-            queryString += " RETURNING id"
         }
 
         if (this.databasename === "information_schema") {

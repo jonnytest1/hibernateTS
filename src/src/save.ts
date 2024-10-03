@@ -78,14 +78,18 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 		sql += sqlArray.join(',')
 
 		if (options.updateOnDuplicate) {
-			sql += ' ON DUPLICATE KEY UPDATE ' + Object.keys(getRepresentation(objects[0]))
-				.map(key => `${key} = VALUES(${key})`).join(",")
+			sql += options.db.constructor.queryStrings.duplicateKeyUpdate(Object.keys(getRepresentation(objects[0])), db)
+
+		}
+
+		if (options.db.constructor.queryStrings?.insertQuery) {
+			sql = options.db.constructor.queryStrings.insertQuery(sql, db)
 		}
 
 		const response = await options.db.sqlquery(sql, params);
 
 		for (let i = 0; i < objects.length; i++) {
-			if (db.columns[db.modelPrimary].primaryType == "auto-increment") {
+			if (db.modelPrimary && db.columns[db.modelPrimary]?.primaryType == "auto-increment") {
 				const subObj = objects[i];
 				const insertId = Number(response.insertId) + i
 				setId(subObj, insertId);
