@@ -17,6 +17,8 @@ import { PsqlBase } from '../src/src/dbs/psql-base'
 import { TestModel } from './testmodels/test-model'
 import { save } from '../src/src/save'
 import { ClWithMApping } from './testmodels/cl-with-mapping'
+import type { DataBaseBase } from '../src/src/dbs/database-base'
+import { load } from '../src/src/load'
 config()
 
 const native = new MariaDbBase(undefined, 20);
@@ -74,12 +76,27 @@ let mariadDbTests = false;
 		dbPoolGEnerator: PsqlBase,
 		modelDb: "public"
 	})
+
+	await postgresBase.sqlquery("TRUNCATE TABLE `testmodel`;");
+
 	debugger
 	for (let i = 1; i < 1000; i += 2) {
 
 		const test = new ClWithMApping("idontcare" + i)
 		const test2 = new ClWithMApping("idontcare" + i + 1)
 		await save([test, test2], { db: postgresBase })
+
+
+		const obj = new TestModel(i, "col")
+		obj.timestamp = new Date()
+
+		await save(obj, { db: postgresBase })
+
+
+		const model = await load(TestModel, ((m) => m.id = obj.id) as ((m: TestModel) => any), undefined, {
+			db: postgresBase as DataBaseBase
+		})
+		debugger
 		//await save([test, test2], { db: native })
 
 	}

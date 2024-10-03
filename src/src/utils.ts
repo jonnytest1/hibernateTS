@@ -60,7 +60,7 @@ export function getRepresentation(object: ISaveAbleObject): { [key: string]: unk
 }
 
 
-export function getDBConfig<T = any>(obj: ISaveAbleObject | ConstructorClass<any> | T): DataBaseConfig<T> {
+export function getDBConfig<TableClass = any>(obj: ISaveAbleObject | ConstructorClass<TableClass> | TableClass): DataBaseConfig<TableClass> {
 	if ((obj as ConstructorClass<any>).prototype && (obj as ConstructorClass<any>).prototype.database) {
 		return (obj as ConstructorClass<any>).prototype.database;
 	}

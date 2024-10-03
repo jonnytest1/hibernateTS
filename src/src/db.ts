@@ -14,6 +14,11 @@ type ColumnQuery = {
     CHARACTER_MAXIMUM_LENGTH: number
     TABLE_NAME: string
 }
+type ConstraintQuery = {
+    TABLE_NAME: string
+    CONSTRAINT_TYPE: "UNIQUE" | "PRIMARY KEY"
+    CONSTRAINT_NAME: string
+}
 
 
 type DatabaseGEnerator = DataBaseBaseStatic
@@ -37,10 +42,10 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
     const DbBaseClass = opts.dbPoolGEnerator ?? MariaDbBase
 
 
-    const db = new DbBaseClass("information_schema", 4)
+    const db = new DbBaseClass("information_schema", 5)
     let tablesDb: DataBaseBase
     try {
-        const [classes, tableSet, columnData] = await Promise.all([
+        const [classes, tableSet, columnData, constraints] = await Promise.all([
             loadFiles(modelRootPath),
             db.selectQuery<{ TABLE_NAME: string }>("SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = ?", [modelDb]).then(db => {
                 return new Set(db.map(table => table.TABLE_NAME))
@@ -51,6 +56,16 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
                 for (const column of columns) {
                     tableColumnMap[column.TABLE_NAME] ??= []
                     tableColumnMap[column.TABLE_NAME].push(column)
+                }
+                return tableColumnMap
+            }),
+            db.selectQuery<ConstraintQuery>("SELECT * FROM information_schema.`TABLE_CONSTRAINTS` WHERE TABLE_SCHEMA = ? ", [modelDb]).then(constraints => {
+
+                const tableColumnMap: { [table: string]: Array<ConstraintQuery> } = {}
+
+                for (const constraint of constraints) {
+                    tableColumnMap[constraint.TABLE_NAME] ??= []
+                    tableColumnMap[constraint.TABLE_NAME].push(constraint)
                 }
                 return tableColumnMap
             })
@@ -68,7 +83,12 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
                     if (!tableSet.has(dbConfig.table)) {
                         await createTable(dbConfig, columnData[dbConfig.table], tablesDb)
                     } else {
-                        await alterTable(dbConfig, columnData[dbConfig.table], tablesDb)
+                        const alterTableData = {
+                            columnData: columnData[dbConfig.table],
+                            constraints: constraints[dbConfig.table]
+                        }
+
+                        await alterTable(dbConfig, alterTableData, tablesDb)
 
                     }
                 })
@@ -83,10 +103,15 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
     }
 }
 
-async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuery>, db: DataBaseBase) {
+async function alterTable(dbConfig: DataBaseConfig, previousData: {
+    columnData: Array<ColumnQuery>
+    constraints: Array<ConstraintQuery>
+}, db: DataBaseBase) {
     let sql = "ALTER TABLE `" + dbConfig.table + "`\r\n"
     let needsAlter = false;
 
+    const queryStrings = db.constructor.queryStrings;
+    const columnData = previousData.columnData
 
     const columnNames = Object.values(dbConfig.columns)
         .map(colDEf => colDEf.dbTableName);
@@ -135,9 +160,9 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuer
             } else if (serverType == "text") {
                 if (serverSize == "large") {
                     //medium / small are both varchar
-                    if ((dbType == "varchar" || dbType == "text") && dbType.toUpperCase() !== db.constructor.mediumTextStr) {
+                    if ((dbType == "varchar" || dbType == "text") && dbType.toUpperCase() !== queryStrings.mediumTextStr) {
                         needsAlter = true;
-                        sql += `	CHANGE COLUMN \`${columnName}\` \`${columnName}\` ${db.constructor.mediumTextStr},\r\n`
+                        sql += `	CHANGE COLUMN \`${columnName}\` \`${columnName}\` ${queryStrings.mediumTextStr},\r\n`
                     } else {
                         console.error(`cant handle case ${serverType} ${serverSize} for ${dbType},${dbSize} in ${dbConfig.table}`)
                     }
@@ -165,9 +190,30 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuer
 
         })
 
+    if (dbConfig.options?.constraints) {
+
+        const neededContraints = Object.fromEntries(dbConfig.options.constraints
+            .map(c => [queryStrings.constraintName(c, dbConfig), c]));
+
+        (previousData.constraints ?? []).forEach(c => {
+            delete neededContraints[c.CONSTRAINT_NAME]
+        });
+
+
+        const missingConstraints = Object.values(neededContraints);
+        if (missingConstraints.length) {
+            needsAlter = true
+            sql += missingConstraints.map(c => {
+                return `ADD ${queryStrings.uniqueConstraintSql(c, undefined, dbConfig)}`
+            }).join(",")
+            // cause past me decided to add new lines after everything 
+            sql += "---"
+        }
+
+    }
+
     sql = sql.substr(0, sql.length - 3) + ";"
     if (needsAlter) {
-        debugger
         console.log(sql);
         await db.sqlquery(sql);
     }
@@ -176,6 +222,9 @@ async function alterTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuer
 async function createTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQuery>, db: DataBaseBase) {
     let sql = ""
     sql += "CREATE TABLE `" + dbConfig.table + "` (\r\n"
+
+    const queryStrings = db.constructor.queryStrings;
+
     for (let column in dbConfig.columns) {
         const colSql = getColumnSQL(dbConfig, column, true)
         if (colSql !== null) {
@@ -184,7 +233,15 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQue
     }
     if (dbConfig.modelPrimary) {
         sql += "	PRIMARY KEY (`" + dbConfig.modelPrimary + "`)\n"
+    } else if (dbConfig.options?.constraints) {
+
+        sql += dbConfig.options.constraints
+            .map(constraint => queryStrings.uniqueConstraintSql(constraint, undefined, dbConfig))
+            .join(",\n")
+    } else {
+        sql = sql.trimEnd().replace(/,$/, "")
     }
+    debugger
     sql += ") COLLATE='utf8mb4_general_ci' ENGINE=InnoDB ;"
     console.log(sql);
     await db.sqlquery(sql);

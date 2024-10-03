@@ -24,7 +24,15 @@ function checkPrototype(constructor: any) {
 	}
 }
 
-export interface TableOptions {
+export interface Constraint<TableClass> {
+	type: "unique",
+
+	columns: Array<keyof TableClass & string>
+}
+
+
+
+export interface TableOptions<TableClass> {
 	/**
 	 * @default constructor.name.toLowerCase()
 	 */
@@ -33,12 +41,15 @@ export interface TableOptions {
 	 * @default "utf8mb4_general_ci"
 	 */
 	collation?: string
+
+
+	constraints?: Array<Constraint<TableClass>>
 }
 
 export const tableClassess: { [key: string]: Function } = {}
 
-export function table(opts: TableOptions = {}) {
-	return function (constructor: new () => any) {
+export function table<T>(opts: TableOptions<T> = {}) {
+	return function (constructor: new () => T) {
 		if (!opts.name) {
 			opts.name = constructor.name.toLowerCase();
 		}
@@ -54,7 +65,9 @@ export function table(opts: TableOptions = {}) {
 		tableClassess[opts.name] = constructor
 		new constructor();
 		checkPrototype(constructor)
-		getDBConfig(constructor).table = opts.name;
+		const cfg = getDBConfig(constructor);
+		cfg.table = opts.name;
+		cfg.options = opts
 	}
 }
 export interface ColumnOption extends DBColumn {

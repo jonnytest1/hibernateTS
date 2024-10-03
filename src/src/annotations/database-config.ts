@@ -1,6 +1,6 @@
 import { Mapping } from "../interface/mapping";
 import { Mappings } from '../interface/mapping-types';
-import { DBColumn } from './database-annotation';
+import { DBColumn, type TableOptions } from './database-annotation';
 
 
 export type PrimaryType = 'auto-increment' | 'custom'
@@ -27,6 +27,9 @@ export class DataBaseConfig<T = any> {
 	table: string;
 	updates: Promise<number>[];
 	columns: { [key in keyof T]?: ColumnDefinition };
+
+
+	options: TableOptions<T>
 
 	constructor() {
 		this.updates = []

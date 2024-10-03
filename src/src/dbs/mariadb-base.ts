@@ -1,6 +1,6 @@
 import * as mariadb from "mariadb";
 import { Exception } from '../exception';
-import type { DataBaseBase, DataBaseBaseStatic, DatabaseResult } from './database-base';
+import type { DataBaseBase, DataBaseBaseStatic, DatabaseResult, QueryStrings } from './database-base';
 import { staticImplements } from '../annotations/static-implements';
 
 
@@ -14,7 +14,17 @@ export function setMariaDbPoolDefaults(opts: Partial<mariadb.PoolConfig>) {
 	defaultOpts = opts
 }
 
-
+export const mariaDbQueryStrings: QueryStrings = {
+	mediumTextStr: "MEDIUMTEXT",
+	constraintName(constraint, context) {
+		return `unique_${context.table}_${constraint.columns.join("_")}`
+	},
+	uniqueConstraintSql(constraint, name, context) {
+		name ??= mariaDbQueryStrings.constraintName(constraint, context)
+		const columnsStr = constraint.columns.map(c => `\`${c}\``).join(",")
+		return `UNIQUE INDEX \`${name}\` (${columnsStr})`
+	},
+}
 
 type ConnectionLog = {
 	timestamp: number;
@@ -25,7 +35,9 @@ type ConnectionLog = {
 export class MariaDbBase implements DataBaseBase {
 
 	static queryCt = 0
-	static mediumTextStr = "MEDIUMTEXT"
+
+
+	static queryStrings = mariaDbQueryStrings
 
 	poolConnections: Array<ConnectionLog> = []
 	pool: mariadb.Pool
@@ -131,6 +143,9 @@ export class MariaDbBase implements DataBaseBase {
 		})
 	}
 
+
+
+
 }
 
 
@@ -143,3 +158,7 @@ export async function withMariaDbPool<T>(consumer: (pool: MariaDbBase) => Promis
 		base.end()
 	}
 }
+
+
+
+

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "re-instal": "rm -r ./node_modules/hibernatets && rm package-lock.json && npm i",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

@@ -1,5 +1,5 @@
 import { Exception } from '../exception';
-import type { DataBaseBase, DataBaseBaseStatic, DatabaseResult } from './database-base';
+import type { DataBaseBase, DataBaseBaseStatic, DatabaseResult, QueryStrings } from './database-base';
 import { Client, Pool, PoolConfig, type PoolClient } from "pg"
 
 import { lookup, type LookupAddress } from "dns"
@@ -22,12 +22,24 @@ interface PSqlBaseEnv {
 }
 
 
+const psqlQueryStrings: QueryStrings = {
+    mediumTextStr: "TEXT",
+    constraintName(constraint, context) {
+        return `${context.table}_${constraint.columns.join("_")}`
+    },
+    uniqueConstraintSql(constraint, name, context) {
+        name ||= psqlQueryStrings.constraintName(constraint, context)
+        const columnsStr = constraint.columns.map(c => `"${c}"`).join(",")
+        return `CONSTRAINT "${name}" UNIQUE (${columnsStr})`
+    },
+}
+
 
 @staticImplements<DataBaseBase["constructor"]>()
 export class PsqlBase implements DataBaseBase {
 
-    static mediumTextStr = "TEXT"
 
+    static queryStrings = psqlQueryStrings
 
     static queryCt = 0
     pool: Pool;
