@@ -12,7 +12,7 @@ type ConnectionLog = {
 
 interface PSqlBaseEnv {
     PSQL_URL: string
-    PQSL_PORT: string
+    PSQL_PORT: string
     PSQL_PWD: string
 
     PSQL_USER: string
@@ -41,10 +41,10 @@ export class PsqlBase implements DataBaseBase {
 
         const poolOptinos: PoolConfig = {}
         poolOptinos.host = env.PSQL_URL
-        poolOptinos.port = +env.PQSL_PORT
+        poolOptinos.port = +env.PSQL_PORT
         poolOptinos.password = env.PSQL_PWD
         poolOptinos.user = env.PSQL_USER ?? "postgres"
-        poolOptinos.database = env.PSQL_DB ?? "postgres"
+        poolOptinos.database = env.PSQL_DB ?? env.PSQL_USER ?? "postgres"
 
         if (count !== undefined) {
             poolOptinos.max = count

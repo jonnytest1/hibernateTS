@@ -68,7 +68,7 @@ let mariadDbTests = false;
 		}
 
 	}
-	const postgresBase = new PsqlBase({ database: "postgres", keepAlive: true })
+	const postgresBase = new PsqlBase({ database: "randomtest", keepAlive: true })
 
 	await updateDatabase(`${__dirname}/testmodels`, {
 		dbPoolGEnerator: PsqlBase,
