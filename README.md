@@ -10,7 +10,7 @@ typescript clone for hiberante/persistance API
 
 # Setup
 
-currently only support for mariadb databases
+currently support for mariadb databases
 
 set up by setting these environment variables
 
@@ -20,6 +20,31 @@ const port = +process.env.DB_PORT;
 const user = process.env.DB_USER;
 const url = process.env.DB_URL;
 const password = process.env.DB_PASSWORD;
+```
+
+for postgres
+
+```javascript
+const url =process.env.PSQL_URL
+const port =process.env.PSQL_PORT
+const password =process.env.PSQL_PWD
+const user = process.env.PSQL_USER
+const db =process.env.PSQL_DB
+
+import {PsqlBase} from "hibernatets/dbs/psql-base"
+
+const pool=new PsqlBase()
+load(type,{
+  ...
+  options:{
+    db:pool
+  }
+})
+
+save(obj,{
+  db:pool
+})
+
 ```
 
 experimentalDecorators needs to be enabled
@@ -276,6 +301,20 @@ export class TestModel {
     example
 
 }
+```
+
+# custom constraints
+
+custom constraints can be added on a per table basic liek this
+
+```javascript
+@table({
+    constraints: [{
+        type: "unique",
+        columns: ["test1", "test2"]
+    }]
+})
+
 ```
 
 npm at
