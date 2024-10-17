@@ -1,5 +1,5 @@
 import type { Constraint } from '../annotations/database-annotation';
-import type { DataBaseConfig } from '../annotations/database-config';
+import type { ColumnDefinition, DataBaseConfig } from '../annotations/database-config';
 
 export interface DatabaseResult {
     insertId: BigInt,
@@ -29,6 +29,9 @@ export interface QueryStrings {
 
 
     duplicateKeyUpdate(escapedKeys: Array<string>, context: DataBaseConfig): string
+
+
+    convertValue?(val: any, column: ColumnDefinition): any
 }
 
 export type DataBaseBaseStatic = {

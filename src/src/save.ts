@@ -56,7 +56,7 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 			let representation = getRepresentation(saveableobject);
 
 			for (let key in representation) {
-				const value = representation[key];
+				let value = representation[key];
 				const dbKey = key.replace(/(^`)/g, "").replace(/(`$)/g, "") as keyof typeof obj
 				if (value === undefined) {
 					params.push(null);
@@ -69,6 +69,10 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 						continue
 					}
 				}
+				if (options.db.constructor.queryStrings?.convertValue) {
+					value = options.db.constructor.queryStrings.convertValue(value, db.columns[dbKey])
+				}
+
 				params.push(value);
 
 			}

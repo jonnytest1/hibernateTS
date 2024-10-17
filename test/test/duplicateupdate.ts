@@ -1,7 +1,9 @@
 
 import { load, save, type DataBaseBase } from '../../src/src';
+import { TestModelNoPrimaryAndUnique } from '../testmodels/model-primaryandunique';
 import { TestModelNoPrimary } from '../testmodels/model-witohut-primary';
 import { TestModel } from '../testmodels/test-model';
+import { assert } from '../util/assert';
 
 export async function testDuplicate(pool: DataBaseBase) {
 
@@ -22,7 +24,25 @@ export async function testDuplicate(pool: DataBaseBase) {
 	}
 
 	debugger;
+	const obj = new TestModelNoPrimaryAndUnique("abc", "123", "val")
+	obj.valueTwo = true
 
+	await save(obj, { updateOnDuplicate: true, db: pool });
+
+	const obj2 = new TestModelNoPrimaryAndUnique("abc", "123", "val123")
+	obj2.valueTwo = false
+	await save(obj, {
+		updateOnDuplicate: {
+			skip: ["valueTwo"]
+		}, db: pool
+	});
+
+	const model = await load(TestModelNoPrimaryAndUnique, {
+		options: { first: true, db: pool },
+
+	})
+	assert(model.valueTwo, false, "overwrote disabled")
+	debugger
 
 	const objects = []
 	for (let i = 0; i < 5; i++) {
@@ -35,6 +55,10 @@ export async function testDuplicate(pool: DataBaseBase) {
 		objects[i] = new TestModel(`${i}`, "asdf2")
 	}
 	await save(objects, { updateOnDuplicate: true, db: pool });
+
+
+
+
 	debugger;
 
 }

@@ -18,6 +18,7 @@ import { TestModel } from './testmodels/test-model'
 import { save } from '../src/src/save'
 import { ClWithMApping } from './testmodels/cl-with-mapping'
 import type { DataBaseBase } from '../src/src/dbs/database-base'
+import { DataCache } from '../src/src/memory-cache/data-cache'
 import { load } from '../src/src/load'
 config()
 
@@ -71,6 +72,16 @@ let mariadDbTests = false;
 	}
 	const postgresBase = new PsqlBase({ database: "randomtest", keepAlive: true })
 
+
+	/*const dataCache = new DataCache({
+		modelDatabase: "randomtest",
+		poolGenerator() {
+			return postgresBase
+		},
+		table_prefix: "datacache"
+	})*/
+
+
 	await updateDatabase(`${__dirname}/testmodels`, {
 		dbPoolGEnerator: PsqlBase,
 		modelDb: "public"
@@ -108,6 +119,7 @@ let mariadDbTests = false;
 		await save([test, test2], { db: postgresBase })
 
 
+
 		const obj = new TestModel(i, "col")
 		obj.timestamp = new Date()
 
@@ -119,6 +131,14 @@ let mariadDbTests = false;
 		})
 		debugger
 		//await save([test, test2], { db: native })
+
+
+		const t = load(TestModel, {
+			filter: `sdfsdf`,
+			options: {
+				first: true
+			}
+		})
 
 	}
 	debugger

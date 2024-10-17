@@ -56,6 +56,13 @@ const psqlQueryStrings: QueryStrings = {
         }
         return sql
     },
+
+    convertValue(val, column) {
+        if (column.opts.type === "boolean" && typeof val == 'boolean') {
+            return Number(val)
+        }
+        return val
+    },
 }
 
 
