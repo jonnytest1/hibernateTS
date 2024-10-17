@@ -28,6 +28,9 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 		value = await options.transformations?.saveFromPropertyToDb(value)
 
 	}
+
+
+
 	let initialized = false
 	if (!opts.db) {
 		opts.db = new MariaDbBase()
@@ -35,6 +38,10 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 	}
 
 	const dbBase = opts.db
+
+	if (dbBase.constructor.queryStrings.convertValue && columnDef) {
+		value = dbBase.constructor.queryStrings.convertValue(value, columnDef)
+	}
 	try {
 		if (mapping) {
 			if (mapping.type == Mappings.OneToMany) {
