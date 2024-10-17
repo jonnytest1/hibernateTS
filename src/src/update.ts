@@ -5,12 +5,18 @@ import { getId, getDBConfig } from './utils';
 import { Mappings } from './interface/mapping-types';
 import { ISaveAbleObject } from './interface/mapping';
 import { ColumnOption } from './annotations/database-annotation';
+import type { DataBaseBase } from './dbs/database-base';
 
 export function pushUpdate(obj: ISaveAbleObject, update: Promise<any>): void {
 	obj["_dbUpdates"].push(update)
 }
 
-export async function update(object: ISaveAbleObject, key: keyof typeof object, value: string | number | Array<ISaveAbleObject>) {
+
+export type UpdateOptions = {
+	db?: DataBaseBase
+}
+
+export async function update(object: ISaveAbleObject, key: keyof typeof object, value: string | number | Array<ISaveAbleObject>, opts: UpdateOptions = {}) {
 	const db = getDBConfig(object);
 
 	const columnDef = db.columns[key];
@@ -22,7 +28,13 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 		value = await options.transformations?.saveFromPropertyToDb(value)
 
 	}
-	const dbBase = new MariaDbBase()
+	let initialized = false
+	if (!opts.db) {
+		opts.db = new MariaDbBase()
+		initialized = true
+	}
+
+	const dbBase = opts.db
 	try {
 		if (mapping) {
 			if (mapping.type == Mappings.OneToMany) {
@@ -55,6 +67,8 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 			return updateResult.affectedRows
 		}
 	} finally {
-		dbBase.end()
+		if (initialized) {
+			dbBase.end()
+		}
 	}
 }

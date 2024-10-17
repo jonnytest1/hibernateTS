@@ -3,7 +3,7 @@ import { update, pushUpdate } from './update';
 import { Mappings } from './interface/mapping-types';
 import { getDBConfig, getId } from './utils';
 import { ISaveAbleObject, Mapping } from './interface/mapping';
-import { remove, save } from '.';
+import { remove, save, type DataBaseBase } from '.';
 import { withMariaDbPool } from './dbs/mariadb-base';
 import { ColumnDefinition } from './annotations/database-config';
 import { ExtendedMap } from './extended-map/extended-map';
@@ -17,6 +17,8 @@ export interface InterceptParams {
 	 * 
 	 */
 	interceptArrayFunctions?: boolean
+
+	db?: DataBaseBase
 }
 export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}) {
 
@@ -77,10 +79,10 @@ export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}
 							value = newVal;
 						}
 						hasSaved = true;
-						pushUpdate(object, save(value).then(async primaryKey => {
+						pushUpdate(object, save(value, { db: opts.db }).then(async primaryKey => {
 							const sql = "UPDATE `" + db.table + "` SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
 
-							const deleteResult = await withMariaDbPool(pool => pool.sqlquery(sql, [primaryKey[0], getId(object)]))
+							const deleteResult = await withMariaDbPool(pool => (opts.db ?? pool).sqlquery(sql, [primaryKey[0], getId(object)]))
 						}))
 						intercept(value, opts);
 
@@ -91,7 +93,9 @@ export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}
 				object["_" + column.modelName] = value;
 				Object.defineProperty(object, column.modelName, overwrites);
 				if (!hasSaved) {
-					pushUpdate(object, update(object, column.modelName, value))
+					pushUpdate(object, update(object, column.modelName, value, {
+						db: opts.db
+					}))
 				}
 			}
 			interceptArray(object, column.modelName, opts)
@@ -115,7 +119,7 @@ function interceptArray<T = any>(object: ISaveAbleObject & T, column: string, op
 					items.forEach(item => {
 						item[mapping.column.modelName] = getId(object)
 					})
-					pushUpdate(object, save(items));
+					pushUpdate(object, save(items, { db: opts.db }));
 					return target.call(array, ...items);
 				}
 			})
@@ -133,7 +137,7 @@ function interceptArray<T = any>(object: ISaveAbleObject & T, column: string, op
 
 					const filterResult = target.call(array, ...items);
 					if (deletingItems.length) {
-						pushUpdate(object, remove(mapping.target, deletingItems.map(it => getId(it))));
+						pushUpdate(object, remove(mapping.target, deletingItems.map(it => getId(it)), { db: opts.db }));
 					}
 					applyProxies(filterResult)
 					return filterResult

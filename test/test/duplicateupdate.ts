@@ -16,8 +16,13 @@ export async function testDuplicate(pool: DataBaseBase) {
 		throw new Error("invalid initial value")
 	}
 	await save(new TestModelNoPrimary("k", "k2", "test1234"), { updateOnDuplicate: true, db: pool });
-	const mode2 = await load(TestModelNoPrimary, m => m.test1 = "k", undefined, {
-		first: true, db: pool
+	const mode2 = await load(TestModelNoPrimary, {
+		filter: m => m.test1 = "k",
+		options: {
+			first: true,
+			db: pool
+
+		}
 	})
 	if (mode2.valueCol !== "test1234") {
 		throw new Error("didnt update")
