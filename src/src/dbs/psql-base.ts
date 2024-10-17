@@ -58,7 +58,7 @@ const psqlQueryStrings: QueryStrings = {
     },
 
     convertValue(val, column) {
-        if (column.opts.type === "boolean" && typeof val == 'boolean') {
+        if (column.opts?.type === "boolean" && typeof val == 'boolean') {
             return Number(val)
         }
         return val
@@ -123,7 +123,7 @@ export class PsqlBase implements DataBaseBase {
 
         PsqlBase.queryCt++;
 
-        let connection: PoolClient;
+        let connection: PoolClient | undefined;
         const connectionLog: ConnectionLog = {
             timestamp: Date.now()
         }
@@ -163,8 +163,8 @@ export class PsqlBase implements DataBaseBase {
             const result = await this.query(connection => connection.query(queryString, params))
 
             return {
-                affectedRows: result.rowCount,
-                insertId: queryString.startsWith("INSERT") && result.rows[0]?.id ? BigInt(result.rows[0]?.id) : null,
+                affectedRows: result.rowCount!,
+                insertId: queryString.startsWith("INSERT") && result.rows[0]?.id ? BigInt(result.rows[0]?.id) : null!,
                 warningStatus: 0
 
             }

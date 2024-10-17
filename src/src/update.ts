@@ -4,7 +4,7 @@ import { save } from './save';
 import { getId, getDBConfig } from './utils';
 import { Mappings } from './interface/mapping-types';
 import { ISaveAbleObject } from './interface/mapping';
-import { ColumnOption, Transformations } from './annotations/database-annotation';
+import { ColumnOption } from './annotations/database-annotation';
 
 export function pushUpdate(obj: ISaveAbleObject, update: Promise<any>): void {
 	obj["_dbUpdates"].push(update)
@@ -13,12 +13,13 @@ export function pushUpdate(obj: ISaveAbleObject, update: Promise<any>): void {
 export async function update(object: ISaveAbleObject, key: keyof typeof object, value: string | number | Array<ISaveAbleObject>) {
 	const db = getDBConfig(object);
 
-	const mapping = db.columns[key].mapping;
+	const columnDef = db.columns[key];
+	const mapping = columnDef?.mapping;
 
-	if (db.columns[key].opts && "transformations" in db.columns[key].opts) {
-		const options = db.columns[key].opts as ColumnOption
+	if (columnDef?.opts && "transformations" in columnDef.opts) {
+		const options = columnDef.opts as ColumnOption
 
-		value = await options.transformations.saveFromPropertyToDb(value)
+		value = await options.transformations?.saveFromPropertyToDb(value)
 
 	}
 	const dbBase = new MariaDbBase()

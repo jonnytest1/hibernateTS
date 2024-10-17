@@ -47,7 +47,7 @@ export class MariaDbBase implements DataBaseBase {
 	pool: mariadb.Pool
 	constructor(database?: string, poolSize?: number | Partial<mariadb.PoolConfig>) {
 		const db = database || process.env.DB_NAME;
-		const port = +process.env.DB_PORT;
+		const port = +(process.env.DB_PORT ?? 3306);
 		const user = process.env.DB_USER;
 		const url = process.env.DB_URL;
 		const password = process.env.DB_PASSWORD;
@@ -87,7 +87,7 @@ export class MariaDbBase implements DataBaseBase {
 	private async query<T>(callback: (pool: mariadb.Connection) => Promise<T>): Promise<T> {
 		MariaDbBase.queryCt++;
 
-		let connection: mariadb.PoolConnection;
+		let connection: mariadb.PoolConnection | undefined;
 		const connectionLog: ConnectionLog = {
 			timestamp: Date.now()
 		}

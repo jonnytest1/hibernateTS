@@ -38,19 +38,20 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 	if (createDb) {
 		opts.db = new MariaDbBase()
 	}
+	const pool = opts.db!
 	try {
 		let deleteCount = 0;
 
 		let objectToDelete: { [key: number]: T } = {};
 		for (let column of Object.values(db.columns)) {
 
-			const mapping = column.mapping;
+			const mapping = column?.mapping;
 			if (mapping) {
 				const toDelete: Array<number> = []
 				for (const id of dletionId) {
 					if (typeof id !== "number") {
 						if (typeof id == "string") {
-							objectToDelete[id] = await load(descriptor, `\`${db.columns[db.modelPrimary].dbTableName}\` = ?`, [id], { deep: opts.deep, first: true, db: opts.db });
+							objectToDelete[id] = await load(descriptor, `\`${db.columns[db.modelPrimary]!.dbTableName}\` = ?`, [id], { deep: opts.deep, first: true, db: opts.db });
 							if (!objectToDelete[id]) {
 								throw new Error("element to delete does not exist")
 							}
@@ -65,11 +66,12 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 						throw new Error("element to delete does not exist")
 					}
 
+					const deletingObject = objectToDelete[id][column!.modelName];
 					switch (mapping.type) {
 						case Mappings.OneToMany:
-							if (objectToDelete[id][column.modelName] instanceof Array) {
-								objectToDelete[id][column.modelName].forEach(subObj => {
-									if (opts.deep == true || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName))) {
+							if (deletingObject instanceof Array) {
+								deletingObject.forEach(subObj => {
+									if (opts.deep === true || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column!.modelName))) {
 										toDelete.push(getId(subObj))
 									}
 								})
@@ -78,8 +80,8 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 							}
 							break;
 						case Mappings.OneToOne:
-							if (objectToDelete[id][column.modelName] && (opts.deep || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column.modelName)))) {
-								toDelete.push(getId(objectToDelete[id][column.modelName]))
+							if (deletingObject && (opts.deep === true || (opts.deep && (opts.deep instanceof Array) && opts.deep.includes(column!.modelName)))) {
+								toDelete.push(getId(deletingObject))
 							}
 
 							break;
@@ -100,12 +102,12 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 			return ` ${db.modelPrimary} = ? `
 		}).join(' \nOR ');
 
-		const result = await opts.db.sqlquery(sql, dletionId);
+		const result = await pool.sqlquery(sql, dletionId);
 		deleteCount += result.affectedRows;
 		return deleteCount;
 	} finally {
 		if (createDb) {
-			opts.db.end()
+			opts.db?.end()
 		}
 	}
 }

@@ -64,6 +64,6 @@ export function getDBConfig<TableClass = any>(obj: ISaveAbleObject | Constructor
 	if ((obj as ConstructorClass<any>).prototype && (obj as ConstructorClass<any>).prototype.database) {
 		return (obj as ConstructorClass<any>).prototype.database;
 	}
-	return obj.constructor.prototype.database;
+	return obj["constructor"].prototype.database;
 }
 

@@ -8,6 +8,7 @@ import { ColumnOption, Transformations } from './annotations/database-annotation
 import { ColumnDefinition } from './annotations/database-config';
 import { SqlCondition } from './sql-condition';
 import type { DataBaseBase } from './dbs/database-base';
+import { objectValues } from './utils/type';
 
 export interface LoadOptions<T> extends InterceptParams {
 	deep?: boolean | Array<string | SqlCondition> | { [key: string]: string | SqlCondition | { filter: string | SqlCondition, depths: number } },
@@ -57,7 +58,7 @@ export async function load<T>(
 	primaryKeyOrFilter: number | LoadParams<T, number>,
 	parameters?: Array<string | number> | string,
 	options?: LoadOptions<T>): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | number | ((obj: T) => any) | LoadParams<T>, parameters: Array<string | number> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
+export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | number | ((obj: T) => any) | LoadParams<T>, parameters: Array<string | number | undefined> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
 	const db = getDBConfig<T>(findClass);
 	let sql = "SELECT * FROM `" + db.table + "` ";
 
@@ -67,9 +68,9 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		if (primaryKeyOrFilter instanceof SqlCondition) {
 			filter = primaryKeyOrFilter
 		} else {
-			filter = primaryKeyOrFilter.filter;
+			filter = primaryKeyOrFilter.filter!;
 			parameters = primaryKeyOrFilter.params ?? []
-			options = primaryKeyOrFilter.options
+			options = primaryKeyOrFilter.options!
 		}
 	} else {
 		filter = primaryKeyOrFilter;
@@ -87,7 +88,9 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		}
 
 		parameters.forEach(param => {
-			params.push(param)
+			if (param !== undefined) {
+				params.push(param)
+			}
 		});
 	} else if (typeof filter === "function") {
 		// format :  s => s.id = +req.params.id
@@ -98,12 +101,17 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		filter(tempObj);
 
 		const previousLength = params.length;
-		sql += Object.values<any>(db.columns)
-			.filter(column => tempObj[column.modelName] !== column.modelName)
+		sql += objectValues(db.columns)
+			.filter((column): column is NonNullable<typeof column> => column && tempObj[column.modelName] !== column.modelName)
 			.map(column => {
-				const value = tempObj[column.modelName]
+				let value = tempObj[column.modelName]
 				if (value !== undefined) {
 					sql += column.dbTableName + " = ?";
+
+					if (options.db?.constructor.queryStrings?.convertValue) {
+						value = options.db.constructor.queryStrings.convertValue(value, db.columns[column.modelName])
+					}
+
 					params.push(value)
 				} else {
 					throw new Error("invalid value")
@@ -127,12 +135,12 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		options.db = new MariaDbBase()
 	}
 	try {
-		const dbResults = await options.db.selectQuery<any>(sql, params)
+		const dbResults = await options.db!.selectQuery<any>(sql, params)
 
 		const results: Array<T & ISaveAbleObject> = [];
 
 		await Promise.all(dbResults.map(async dbResult => {
-			const result: T & ISaveAbleObject = db.createInstance();
+			const result = db.createInstance() as T & ISaveAbleObject;
 
 			if (typeof dbResult[db.modelPrimary] == "bigint") {
 				dbResult[db.modelPrimary] = Number(dbResult[db.modelPrimary])
@@ -140,20 +148,25 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 			result[db.modelPrimary] = dbResult[db.modelPrimary]
 
 			for (let column in db.columns) {
-				const columnOptions: ColumnOption = db.columns[column].opts
-				const mapping = db.columns[column].mapping;
+				const columnDef = db.columns[column];
+				if (columnDef) {
+					const mapping = db.columns[column]?.mapping;
 
-				let dbResultPropertyValue = dbResult[column];
-				if (columnOptions.transformations) {
-					const transformation: Transformations<typeof result[typeof column]> = columnOptions.transformations
-					dbResultPropertyValue = await transformation.loadFromDbToProperty(dbResultPropertyValue)
-				} else if (columnOptions.type == "boolean") {
-					dbResultPropertyValue = dbResultPropertyValue ? true : false
-				} else if (columnOptions.type == "number" && typeof dbResultPropertyValue == "bigint") {
-					dbResultPropertyValue = Number(dbResultPropertyValue)
+					let dbResultPropertyValue = dbResult[column];
+					if (columnDef.opts) {
+						const columnOptions: ColumnOption = columnDef.opts
+						if (columnOptions.transformations) {
+							const transformation: Transformations<typeof result[typeof column]> = columnOptions.transformations
+							dbResultPropertyValue = await transformation.loadFromDbToProperty(dbResultPropertyValue)
+						} else if (columnOptions.type == "boolean") {
+							dbResultPropertyValue = dbResultPropertyValue ? true : false
+						} else if (columnOptions.type == "number" && typeof dbResultPropertyValue == "bigint") {
+							dbResultPropertyValue = Number(dbResultPropertyValue)
+						}
+					}
+
+					result[column] = dbResultPropertyValue;
 				}
-
-				result[column] = dbResultPropertyValue;
 			}
 
 			results.push(result);
@@ -162,7 +175,6 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 
 		await Promise.all(Object.keys(db.columns).map(async columnName => {
 			const column: ColumnDefinition<string> = db.columns[columnName]
-			const columnOptions: ColumnOption = column.opts
 			const mapping = column.mapping;
 
 			const idsToLoad: { [id: number]: Array<unknown> } = {}
@@ -223,11 +235,11 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 					additionalFilter = ` AND (${filter})`;
 				}
 				let nextOptions = nextLevelOptions(options)
-				if (mapping.type === Mappings.OneToMany) {
+				if (mapping?.type === Mappings.OneToMany) {
 					const oneToManyItems = await load<any>(mapping.target, `\`${mapping.column.dbTableName}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions, first: false }) as any;
 
 					for (const item of oneToManyItems) {
-						const parentObjects = idsToLoad[item[mapping.column.dbTableName]]
+						const parentObjects = idsToLoad[item[mapping.column.dbTableName]] as Array<Record<string, Array<unknown>>>
 						parentObjects.forEach(obj => {
 							obj[columnName] = obj[columnName] || []
 							obj[columnName].push(item);
@@ -235,12 +247,12 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 					}
 
 					//result[columnName] = items
-				} else if (mapping.type == Mappings.OneToOne) {
+				} else if (mapping?.type == Mappings.OneToOne) {
 					const targetConfig = getDBConfig(mapping.target)
 					const oneToOneItems = await load<any>(mapping.target, `\`${targetConfig.modelPrimary}\` IN(${idParams})${additionalFilter}`, idArrayAndParams, { ...nextOptions })
 
 					for (const item of oneToOneItems) {
-						const parentObjects = idsToLoad[item[targetConfig.modelPrimary]]
+						const parentObjects = idsToLoad[item[targetConfig.modelPrimary]] as Array<Record<string, unknown>>
 						parentObjects.forEach(obj => {
 							obj[columnName] = item;
 						});
@@ -265,7 +277,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		return results[0];
 	} finally {
 		if (iniializePool) {
-			options.db.end()
+			options.db?.end()
 		}
 	}
 

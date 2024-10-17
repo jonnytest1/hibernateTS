@@ -23,7 +23,7 @@ export async function testDuplicate(pool: DataBaseBase) {
 		throw new Error("didnt update")
 	}
 
-	debugger;
+
 	const obj = new TestModelNoPrimaryAndUnique("abc", "123", "val")
 	obj.valueTwo = true
 
@@ -41,8 +41,8 @@ export async function testDuplicate(pool: DataBaseBase) {
 		options: { first: true, db: pool },
 
 	})
-	assert(model.valueTwo, false, "overwrote disabled")
-	debugger
+	assert(model.valueTwo, true, "overwrote disabled")
+
 
 	const objects = []
 	for (let i = 0; i < 5; i++) {

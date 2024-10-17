@@ -97,7 +97,8 @@ let mariadDbTests = false;
 				postgresBase.sqlquery("TRUNCATE TABLE `mappingcreate`;"),
 				postgresBase.sqlquery("TRUNCATE TABLE `recursivemapping`;"),
 				postgresBase.sqlquery("TRUNCATE TABLE `attributeitem`;"),
-				postgresBase.sqlquery("TRUNCATE TABLE `testmodelnoprimary`;")
+				postgresBase.sqlquery("TRUNCATE TABLE `testmodelnoprimary`;"),
+				postgresBase.sqlquery("TRUNCATE TABLE `testmodelnoprimaryandunique`;")
 
 			])
 		} catch (e) {

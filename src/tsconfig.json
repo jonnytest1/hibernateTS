@@ -6,6 +6,7 @@
 		"declaration": true,
 		"module": "commonjs",
 		"moduleResolution": "node",
+		"strictNullChecks": true,
 		"lib": [
 			"ES2021"
 		],
@@ -16,5 +17,8 @@
 		"typeRoots": [
 			"node_modules/@types"
 		],
-	}
+	},
+	"include": [
+		"./**/*.ts"
+	]
 }

@@ -99,7 +99,7 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
 
     } finally {
         db.end()
-        tablesDb?.end()
+        tablesDb!.end()
     }
 }
 
@@ -114,7 +114,7 @@ async function alterTable(dbConfig: DataBaseConfig, previousData: {
     const columnData = previousData.columnData
 
     const columnNames = Object.values(dbConfig.columns)
-        .map(colDEf => colDEf.dbTableName);
+        .map(colDEf => colDEf!.dbTableName);
     const missingColumns = columnNames
         .filter(columName => !columnData.some(colData => colData.COLUMN_NAME == columName) && getColumnSQL(dbConfig, columName) != null);
 
@@ -127,12 +127,18 @@ async function alterTable(dbConfig: DataBaseConfig, previousData: {
         .filter(columName => columnData.some(colData => colData.COLUMN_NAME == columName) && getColumnSQL(dbConfig, columName) != null)
         .forEach(columnName => {
             const dbColumn = columnData.find(colData => colData.COLUMN_NAME == columnName);
-            const serverColumn = Object.values(dbConfig.columns).find(sColumn => sColumn.dbTableName === columnName)
-            if (serverColumn.opts && serverColumn.opts.size == "small") {
+            if (!dbColumn) {
+                throw new Error("didnt find db column")
+            }
+            const serverColumn = Object.values(dbConfig.columns).find(sColumn => sColumn?.dbTableName === columnName)
+            if (serverColumn?.opts && serverColumn.opts.size == "small") {
                 return;
             }
-            const serverType = serverColumn.opts.type
-            const serverSize = serverColumn.opts.size;
+            if (!serverColumn) {
+                throw new Error("didnt find server column")
+            }
+            const serverType = serverColumn.opts!.type
+            const serverSize = serverColumn.opts!.size;
             const dbType = dbColumn.DATA_TYPE;
             const dbSize = dbColumn.CHARACTER_MAXIMUM_LENGTH
 
@@ -251,7 +257,10 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQue
 function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boolean) {
     let columnSql = ""
     const columnConfig = dbConfig.columns[column];
-    const colDbOpts = columnConfig.opts;
+    if (!columnConfig) {
+        throw new Error("no column config")
+    }
+    const colDbOpts = columnConfig.opts ?? {};
 
     if (dbConfig.modelPrimary == column) {
         colDbOpts.nullable = false;
@@ -266,7 +275,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
                 return null
             } else if (columnConfig.mapping.type == Mappings.OneToOne) {
                 const targetConf = getDBConfig(columnConfig.mapping.target);
-                const targetColDbOpts = targetConf.columns[targetConf.modelPrimary].opts
+                const targetColDbOpts = targetConf.columns[targetConf.modelPrimary]?.opts ?? {}
                 colDbOpts.size = targetColDbOpts.size;
                 colDbOpts.type = targetColDbOpts.type;
                 colDbOpts.nullable = true
@@ -277,10 +286,10 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
                 const targetConf = getDBConfig(mappingDef.target);
 
                 for (let column in targetConf.columns) {
-                    if (targetConf.columns[column].mapping) {
-                        const mapping = targetConf.columns[column].mapping
-                        const backwardConf = getDBConfig(mapping.target)
-                        if (mapping.type == Mappings.OneToOne && backwardConf.table == dbConfig.table) {
+                    const columnMapping = targetConf.columns[column]?.mapping;
+                    if (columnMapping) {
+                        const backwardConf = getDBConfig(columnMapping.target)
+                        if (columnMapping.type == Mappings.OneToOne && backwardConf.table == dbConfig.table) {
                             return true;
                         }
                     }
@@ -291,7 +300,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
             for (let mappingDefIndex = 0; mappingDefIndex < columnConfig.inverseMappingDef.length; mappingDefIndex++) {
                 const mappingDef = columnConfig.inverseMappingDef[mappingDefIndex]
                 const targetConf = getDBConfig(mappingDef.target);
-                const targetColDbOpts = targetConf.columns[targetConf.modelPrimary].opts
+                const targetColDbOpts = targetConf.columns[targetConf.modelPrimary]?.opts ?? {}
 
                 if (mappingDefIndex > 0) {
                     if (colDbOpts.size != targetColDbOpts.size || colDbOpts.type != targetColDbOpts.type) {
@@ -396,7 +405,7 @@ function getColumnSQL(dbConfig: DataBaseConfig, column: string, createMOde?: boo
 
 async function loadFiles(path: string): Promise<Array<any>> {
     const files = await promises.readdir(path);
-    const classes = await Promise.all(files.map(async (file) => {
+    const classes: Array<any> = await Promise.all(files.map(async (file) => {
         const absolutePath = join(path, file);
         const stats = await promises.stat(absolutePath);
         if (stats.isFile()) {

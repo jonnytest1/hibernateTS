@@ -183,7 +183,7 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Pr
 				}
 
 				column(options)(target, propertyKey, descriptor);
-				column({ ...options })(new m(), columnKey)
+				column({ ...options })(new m() as ISaveAbleObject, columnKey)
 
 				const columnDef = getDBConfig(target).columns[propertyKey];
 				const mappingColumnDef: ColumnDefinition = getDBConfig(m).columns[columnKey];

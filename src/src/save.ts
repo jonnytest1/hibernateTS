@@ -38,6 +38,7 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 	if (initializePool) {
 		options.db = new MariaDbBase()
 	}
+	const pool = options.db!
 
 	try {
 		let sql = "INSERT INTO `" + db.table + "` ("
@@ -46,9 +47,9 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 
 		sql += ") VALUES";
 
-		const params = [];
+		const params: Array<unknown> = [];
 
-		const sqlArray = []
+		const sqlArray: Array<string> = []
 
 
 		for (let obj of objects) {
@@ -62,15 +63,16 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 					params.push(null);
 					continue
 				}
-				if (db.columns[dbKey].opts && "transformations" in db.columns[dbKey].opts) {
-					const columnOptions: ColumnOption = db.columns[dbKey].opts as ColumnOption
+				const columnDef = db.columns[dbKey]!;
+				if (columnDef?.opts && "transformations" in columnDef.opts) {
+					const columnOptions: ColumnOption = columnDef.opts as ColumnOption
 					if (columnOptions.transformations) {
 						params.push(await columnOptions.transformations.saveFromPropertyToDb(value))
 						continue
 					}
 				}
-				if (options.db.constructor.queryStrings?.convertValue) {
-					value = options.db.constructor.queryStrings.convertValue(value, db.columns[dbKey])
+				if (options.db?.constructor.queryStrings?.convertValue) {
+					value = options.db.constructor.queryStrings.convertValue(value, columnDef)
 				}
 
 				params.push(value);
@@ -93,15 +95,15 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 				})
 
 			}
-			sql += options.db.constructor.queryStrings.duplicateKeyUpdate(keys, db)
+			sql += options.db?.constructor.queryStrings.duplicateKeyUpdate(keys, db)
 
 		}
 
-		if (options.db.constructor.queryStrings?.insertQuery) {
-			sql = options.db.constructor.queryStrings.insertQuery(sql, db)
+		if (pool.constructor.queryStrings?.insertQuery) {
+			sql = pool.constructor.queryStrings.insertQuery(sql, db)
 		}
 
-		const response = await options.db.sqlquery(sql, params);
+		const response = await pool.sqlquery(sql, params);
 
 		for (let i = 0; i < objects.length; i++) {
 			if (db.modelPrimary && db.columns[db.modelPrimary]?.primaryType == "auto-increment") {
@@ -115,7 +117,7 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 
 
 		for (let column of Object.values(db.columns)) {
-			const mapping: Mapping<Mappings> = column.mapping;
+			const mapping: Mapping<Mappings> | undefined = column.mapping;
 			if (mapping) {
 				const savingObjects: Array<{ parent?: any, subobject: any }> = []
 				for (const obj of objects) {
@@ -148,7 +150,7 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 					const ids = await save(savingObjects.filter(obj => !isPersisted(obj.subobject)).map(o => o.subobject), { db: options.db });
 					if (mapping.type == Mappings.OneToOne) {
 						const sql = "UPDATE `" + db.table + "` SET `" + column.dbTableName + "` = ? WHERE " + db.modelPrimary + " = ?";
-						const deleteResult = await options.db.sqlquery(sql, [ids[0], getId(savingObjects[0].parent)])
+						const deleteResult = await pool.sqlquery(sql, [ids[0], getId(savingObjects[0].parent)])
 					}
 				}
 
@@ -159,7 +161,7 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 		return objects.map(obj => getId(obj));
 	} finally {
 		if (initializePool) {
-			options.db.end()
+			options.db?.end()
 		}
 	}
 }
