@@ -20,7 +20,8 @@ export interface LoadOptions<T> extends InterceptParams {
 	dontInterceptSetters?: true
 }
 
-export interface LoadParams<T, F = string | number | SqlCondition | ((obj: T) => any), O = LoadOptions<T>> {
+export type Filter<T> = string | SqlCondition | ((obj: T) => any) | number
+export interface LoadParams<T, F = Filter<T>, O = LoadOptions<T>> {
 	filter?: F
 	params?: Array<string | number> | string
 
@@ -29,17 +30,36 @@ export interface LoadParams<T, F = string | number | SqlCondition | ((obj: T) =>
 
 export type SqlParameter = string | number
 
-
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: ((obj: T) => any) | LoadParams<T, (obj: T) => any, { first: true } & CustomOmit<LoadOptions<T>, "first">>, parameters: undefined | undefined[], options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | LoadParams<T, string, { first: true } & CustomOmit<LoadOptions<T>, "first">>, parameters: Array<string | number> | string, options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | LoadParams<T, string>, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: ((obj: T) => any) | LoadParams<T, (obj: T) => any>, parameters?: undefined | undefined[], options?: LoadOptions<T>): Promise<Array<T>>;
-export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: number | LoadParams<T, number>, parameters?: Array<string | number> | string, options?: LoadOptions<T>): Promise<T>;
+export async function load<T>(
+	findClass: ConstructorClass<T>,
+	primaryKeyOrFilter: LoadParams<T, Filter<T>, { first: true } & CustomOmit<LoadOptions<T>, "first">>,
+): Promise<T>;
+export async function load<T>(
+	findClass: ConstructorClass<T>,
+	primaryKeyOrFilter: ((obj: T) => any) | LoadParams<T, Filter<T>, { first: true } & CustomOmit<LoadOptions<T>, "first">>,
+	parameters: undefined | undefined[],
+	options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
+export async function load<T>(
+	findClass: ConstructorClass<T>,
+	primaryKeyOrFilter: string | SqlCondition | LoadParams<T, Filter<T>, { first: true } & CustomOmit<LoadOptions<T>, "first">>,
+	parameters: Array<string | number> | string,
+	options: { first: true } & CustomOmit<LoadOptions<T>, "first">): Promise<T>;
+export async function load<T>(findClass: ConstructorClass<T>,
+	primaryKeyOrFilter: string | SqlCondition | LoadParams<T, string>,
+	parameters?: Array<string | number> | string,
+	options?: LoadOptions<T>): Promise<Array<T>>;
+export async function load<T>(findClass: ConstructorClass<T>,
+	primaryKeyOrFilter: ((obj: T) => any) | LoadParams<T, (obj: T) => any>,
+	parameters?: undefined | undefined[],
+	options?: LoadOptions<T>): Promise<Array<T>>;
+export async function load<T>(
+	findClass: ConstructorClass<T>,
+	primaryKeyOrFilter: number | LoadParams<T, number>,
+	parameters?: Array<string | number> | string,
+	options?: LoadOptions<T>): Promise<T>;
 export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter: string | SqlCondition | number | ((obj: T) => any) | LoadParams<T>, parameters: Array<string | number> | string = [], options: LoadOptions<T> = {}): Promise<T | Array<T>> {
 	const db = getDBConfig<T>(findClass);
 	let sql = "SELECT * FROM `" + db.table + "` ";
-
-
 
 	let params: Array<SqlParameter> = [];
 	let filter: string | SqlCondition | ((obj: T) => any) | number;
@@ -48,7 +68,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 			filter = primaryKeyOrFilter
 		} else {
 			filter = primaryKeyOrFilter.filter;
-			parameters = primaryKeyOrFilter.params
+			parameters = primaryKeyOrFilter.params ?? []
 			options = primaryKeyOrFilter.options
 		}
 	} else {
@@ -71,7 +91,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		});
 	} else if (typeof filter === "function") {
 		// format :  s => s.id = +req.params.id
-		const tempObj = new findClass();
+		const tempObj = {} as T;
 		for (let column in db.columns) {
 			tempObj[column] = column as any;
 		}
@@ -112,7 +132,7 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 		const results: Array<T & ISaveAbleObject> = [];
 
 		await Promise.all(dbResults.map(async dbResult => {
-			const result: T & ISaveAbleObject = new findClass();
+			const result: T & ISaveAbleObject = db.createInstance();
 
 			if (typeof dbResult[db.modelPrimary] == "bigint") {
 				dbResult[db.modelPrimary] = Number(dbResult[db.modelPrimary])

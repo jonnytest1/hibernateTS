@@ -7,16 +7,18 @@ import { ColumnOption } from './annotations/database-annotation';
 import { ExtendedMap } from './extended-map/extended-map';
 import type { DataBaseBase } from './dbs/database-base';
 
-interface SaveOptions {
+interface SaveOptions<T> {
 	/**
 	 * update all not primary keys if it already exists defaults to false
 	 */
-	updateOnDuplicate?: boolean
+	updateOnDuplicate?: boolean | {
+		skip?: Array<keyof T & string>
+	}
 
 	db?: DataBaseBase
 }
 
-export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject, options: SaveOptions = {}): Promise<Array<number>> {
+export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T, options: SaveOptions<T> = {}): Promise<Array<number>> {
 	let objects: Array<ISaveAbleObject>;
 	if (!(saveObjects instanceof Array)) {
 		objects = [saveObjects];
@@ -78,7 +80,16 @@ export async function save(saveObjects: Array<ISaveAbleObject> | ISaveAbleObject
 		sql += sqlArray.join(',')
 
 		if (options.updateOnDuplicate) {
-			sql += options.db.constructor.queryStrings.duplicateKeyUpdate(Object.keys(getRepresentation(objects[0])), db)
+
+			let keys = Object.keys(getRepresentation(objects[0]));
+
+			if (typeof options.updateOnDuplicate === "object" && options.updateOnDuplicate.skip) {
+				options.updateOnDuplicate.skip.forEach(key => {
+					keys = keys.filter(k => k !== key)
+				})
+
+			}
+			sql += options.db.constructor.queryStrings.duplicateKeyUpdate(keys, db)
 
 		}
 

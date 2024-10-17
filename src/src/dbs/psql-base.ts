@@ -33,23 +33,21 @@ const psqlQueryStrings: QueryStrings = {
         return `CONSTRAINT "${name}" UNIQUE (${columnsStr})`
     },
     duplicateKeyUpdate(keys, context) {
-        const constraints = []
-
-        if (context.modelPrimary) {
-            constraints.push(`ON CONFLICT ("${context.modelPrimary}") DO UPDATE 
-                SET ${keys.map(k => `${k} = excluded.${k} `)}`)
-        }
 
         if (context.options?.constraints?.length) {
-            for (const constraint of context.options?.constraints) {
+            for (const constraint of context.options?.constraints ?? []) {
                 const colsStr = constraint.columns.map(c => `"${c}"`).join(",")
 
-                constraints.push(`ON CONFLICT (${colsStr}) DO UPDATE 
-                    SET ${keys.map(k => `${k} = excluded.${k} `)}`)
+                return `ON CONFLICT (${colsStr}) DO UPDATE 
+                    SET ${keys.map(k => `${k} = excluded.${k} `)}`
             }
         }
+        if (context.modelPrimary) {
+            return `ON CONFLICT ("${context.modelPrimary}") DO UPDATE 
+                SET ${keys.map(k => `${k} = excluded.${k} `)}`
+        }
 
-        return constraints.join("\n")
+        return ""
     },
 
     insertQuery(sql, context) {

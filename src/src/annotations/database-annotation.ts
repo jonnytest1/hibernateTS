@@ -1,9 +1,9 @@
 
 import { ColumnDefinition, DataBaseConfig, PrimaryType } from './database-config';
 import { Mappings } from '../interface/mapping-types';
-import { CustomOmit, getDBConfig } from '../utils';
+import { getDBConfig } from '../utils';
 import { ISaveAbleObject, ConstructorClass } from '../interface/mapping';
-import { isFunction } from 'util';
+
 
 export interface DBColumn {
 	/**
@@ -20,7 +20,7 @@ export interface DBColumn {
 
 function checkPrototype(constructor: any) {
 	if (constructor.prototype.database == undefined) {
-		constructor.prototype.database = new DataBaseConfig();
+		constructor.prototype.database = new DataBaseConfig(constructor);
 	}
 }
 
@@ -43,6 +43,9 @@ export interface TableOptions<TableClass> {
 	collation?: string
 
 
+	usePrototypeAssignInsteadOf0ArgsConstructor?: boolean
+
+
 	constraints?: Array<Constraint<TableClass>>
 }
 
@@ -63,7 +66,10 @@ export function table<T>(opts: TableOptions<T> = {}) {
 			throw "duplicate table " + opts.name
 		}
 		tableClassess[opts.name] = constructor
-		new constructor();
+		if (!opts.usePrototypeAssignInsteadOf0ArgsConstructor) {
+			//testing if 0 args constructor works
+			new constructor();
+		}
 		checkPrototype(constructor)
 		const cfg = getDBConfig(constructor);
 		cfg.table = opts.name;
@@ -75,9 +81,9 @@ export interface ColumnOption extends DBColumn {
 }
 
 export interface Transformations<T, U = any> {
-	loadFromDbToProperty: (dbData: U) => Promise<T>;
+	loadFromDbToProperty: (dbData: U) => (Promise<T> | T);
 
-	saveFromPropertyToDb: (obj: T) => Promise<U>
+	saveFromPropertyToDb: (obj: T) => (Promise<U> | U)
 }
 
 
@@ -123,11 +129,11 @@ export function primary(options: primaryOptions = {}): (...args) => void {
 }
 
 
-function getColumnKey(mappingModel, model: ConstructorClass<any>, key?: string | ((t: any) => any)): string {
+function getColumnKey<T>(mappingModel: DataBaseConfig<T>, model: ConstructorClass<any>, key?: string | ((t: any) => any)): string {
 	if (!key) {
 		return mappingModel.modelPrimary;
 	} else if (typeof key == "function") {
-		const testobject = new model();
+		const testobject = {} as any;
 		for (let column in mappingModel.columns) {
 			testobject[column] = column;
 		}

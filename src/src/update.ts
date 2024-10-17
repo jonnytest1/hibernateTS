@@ -16,7 +16,7 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 	const mapping = db.columns[key].mapping;
 
 	if (db.columns[key].opts && "transformations" in db.columns[key].opts) {
-		const options: ColumnOption = db.columns[key].opts
+		const options = db.columns[key].opts as ColumnOption
 
 		value = await options.transformations.saveFromPropertyToDb(value)
 

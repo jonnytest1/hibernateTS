@@ -31,8 +31,18 @@ export class DataBaseConfig<T = any> {
 
 	options: TableOptions<T>
 
-	constructor() {
+	constructor(private tableConstructor: new () => T) {
 		this.updates = []
 		this.columns = {}
+	}
+
+
+	public createInstance() {
+		if (this.options?.usePrototypeAssignInsteadOf0ArgsConstructor) {
+			const obj = {}
+			Object.setPrototypeOf(obj, this.tableConstructor)
+			return obj as T
+		}
+		return new this.tableConstructor()
 	}
 }
