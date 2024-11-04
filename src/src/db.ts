@@ -43,7 +43,7 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
 
 
     const db = new DbBaseClass("information_schema", 5)
-    let tablesDb: DataBaseBase
+    let tablesDb: DataBaseBase | undefined
     try {
         const [classes, tableSet, columnData, constraints] = await Promise.all([
             loadFiles(modelRootPath),
@@ -81,14 +81,14 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
 
                     const dbConfig = getDBConfig(dbClass);
                     if (!tableSet.has(dbConfig.table)) {
-                        await createTable(dbConfig, columnData[dbConfig.table], tablesDb)
+                        await createTable(dbConfig, columnData[dbConfig.table], tablesDb!)
                     } else {
                         const alterTableData = {
                             columnData: columnData[dbConfig.table],
                             constraints: constraints[dbConfig.table]
                         }
 
-                        await alterTable(dbConfig, alterTableData, tablesDb)
+                        await alterTable(dbConfig, alterTableData, tablesDb!)
 
                     }
                 })
@@ -98,8 +98,8 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
         console.log("finsihed db check")
 
     } finally {
-        db.end()
-        tablesDb!.end()
+        db?.end()
+        tablesDb?.end()
     }
 }
 

@@ -16,6 +16,7 @@ export type DataBaseBase = {
     end(): Promise<void>;
 
     selectQuery<T>(queryString: string, params?: Array<any>): Promise<Array<T>>
+
 }
 
 

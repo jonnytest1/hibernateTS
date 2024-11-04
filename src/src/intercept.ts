@@ -1,7 +1,7 @@
 
 import { update, pushUpdate } from './update';
 import { Mappings } from './interface/mapping-types';
-import { getDBConfig, getId } from './utils';
+import { getDBConfig, getId, isPersisted } from './utils';
 import { ISaveAbleObject, Mapping } from './interface/mapping';
 import { remove, save, type DataBaseBase } from '.';
 import { withMariaDbPool } from './dbs/mariadb-base';
@@ -79,10 +79,18 @@ export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}
 							value = newVal;
 						}
 						hasSaved = true;
-						pushUpdate(object, save(value, { db: opts.db }).then(async primaryKey => {
+
+						let savingPr: Promise<Array<number>>
+						if (isPersisted(value)) {
+							savingPr = Promise.resolve([getId(value)])
+						} else {
+							savingPr = save(value, { db: opts.db })
+						}
+
+						pushUpdate(object, savingPr.then(async primaryKey => {
 							const sql = "UPDATE `" + db.table + "` SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
 
-							const deleteResult = await withMariaDbPool(pool => (opts.db ?? pool).sqlquery(sql, [primaryKey[0], getId(object)]))
+							const updateResult = await withMariaDbPool(pool => (opts.db ?? pool).sqlquery(sql, [primaryKey[0], getId(object)]))
 						}))
 						intercept(value, opts);
 
