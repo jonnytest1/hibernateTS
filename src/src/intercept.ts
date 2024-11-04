@@ -85,6 +85,7 @@ export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}
 							savingPr = Promise.resolve([getId(value)])
 						} else {
 							savingPr = save(value, { db: opts.db })
+							intercept(value, opts);
 						}
 
 						pushUpdate(object, savingPr.then(async primaryKey => {
@@ -92,7 +93,6 @@ export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}
 
 							const updateResult = await withMariaDbPool(pool => (opts.db ?? pool).sqlquery(sql, [primaryKey[0], getId(object)]))
 						}))
-						intercept(value, opts);
 
 					} else {
 						throw "unimplemented "
