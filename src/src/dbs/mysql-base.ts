@@ -1,5 +1,7 @@
+import type { DataBaseConfig } from '../annotations/database-config';
 import { staticImplements } from '../annotations/static-implements';
 import { Exception } from '../exception';
+import type { ISaveAbleObject } from '../interface/mapping';
 import type { DataBaseBase, DataBaseBaseStatic, DatabaseResult, QueryStrings } from './database-base';
 import { createPool, PoolConfig, type Connection, type Pool, type PoolConnection } from "mysql"
 export const mySqlDbQueryStrings: QueryStrings = {
@@ -108,7 +110,7 @@ export class MysqlBase implements DataBaseBase {
     }
 
 
-    async sqlquery<T>(queryString: string, params?: Array<any>): Promise<DatabaseResult> {
+    async sqlquery<T>(cfg: DataBaseConfig<ISaveAbleObject>, queryString: string, params?: Array<any>): Promise<DatabaseResult> {
         try {
             return await this.query(connection => new Promise((res, err) => {
                 connection.query(queryString, params, (e, results, fields) => {

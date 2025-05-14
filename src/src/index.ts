@@ -1,7 +1,7 @@
 export { load } from "./load"
 export { deleteFnc as remove } from './delete';
 export { intercept } from './intercept';
-export { save } from './save';
+export { save, addArrayItem } from './save';
 export { Mappings } from './interface/mapping-types';
 export * from "./annotations/database-annotation"
 export { updateDatabase } from "./db"
