@@ -6,6 +6,7 @@ import { Mapping, ISaveAbleObject } from './interface/mapping';
 import { ColumnOption } from './annotations/database-annotation';
 import { ExtendedMap } from './extended-map/extended-map';
 import type { DataBaseBase } from './dbs/database-base';
+import { pushUpdate } from './update';
 
 interface SaveOptions<T> {
 	/**
@@ -17,6 +18,7 @@ interface SaveOptions<T> {
 
 	db?: DataBaseBase
 }
+
 
 export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T, options: SaveOptions<T> = {}): Promise<Array<number>> {
 	let objects: Array<ISaveAbleObject>;
@@ -103,7 +105,7 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 			sql = pool.constructor.queryStrings.insertQuery(sql, db)
 		}
 
-		const response = await pool.sqlquery(sql, params);
+		const response = await pool.sqlquery(db, sql, params);
 
 		for (let i = 0; i < objects.length; i++) {
 			if (db.modelPrimary && db.columns[db.modelPrimary]?.primaryType == "auto-increment") {
@@ -150,7 +152,7 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 					const ids = await save(savingObjects.filter(obj => !isPersisted(obj.subobject)).map(o => o.subobject), { db: options.db });
 					if (mapping.type == Mappings.OneToOne) {
 						const sql = "UPDATE `" + db.table + "` SET `" + column.dbTableName + "` = ? WHERE " + db.modelPrimary + " = ?";
-						const deleteResult = await pool.sqlquery(sql, [ids[0], getId(savingObjects[0].parent)])
+						const deleteResult = await pool.sqlquery(db, sql, [ids[0], getId(savingObjects[0].parent)])
 					}
 				}
 
@@ -164,4 +166,39 @@ export async function save<T extends ISaveAbleObject>(saveObjects: Array<T> | T,
 			options.db?.end()
 		}
 	}
+}
+
+
+
+interface AddArrayOpts<T> {
+	db: DataBaseBase, items: Array<T>
+}
+
+type ArrayKeys<T> = {
+	[K in keyof T]: T[K] extends Array<infer U> ? K : never
+}[keyof T]
+
+type ArrayType<T, K extends keyof T> = T[K] extends Array<infer U> ? U : never
+type AnyToNever<T, K extends keyof T> = T[K] extends Array<infer U> ? U : never
+
+export function addArrayItem<T extends ISaveAbleObject, K extends ArrayKeys<T>>(parent: T, key: K, opts: Array<ArrayType<T, K> & ISaveAbleObject> | AddArrayOpts<ArrayType<T, K> & ISaveAbleObject>) {
+	const mapping = getDBConfig(parent).columns[key]?.mapping;
+	if (!mapping) {
+		throw new Error("no mapping found for object")
+	}
+
+	let items: Array<ArrayType<T, K> & ISaveAbleObject>
+	let saveOpts: SaveOptions<ArrayType<T, K> & ISaveAbleObject> = {}
+	if (opts instanceof Array) {
+		items = opts
+	} else {
+		items = opts.items
+		saveOpts = opts
+	}
+
+
+	items.forEach(item => {
+		item[mapping.column.modelName] = getId(parent)
+	})
+	pushUpdate(parent, save(items, saveOpts));
 }

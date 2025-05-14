@@ -4,6 +4,8 @@ import { Client, Pool, PoolConfig, type PoolClient } from "pg"
 
 import { lookup, type LookupAddress } from "dns"
 import { staticImplements } from '../annotations/static-implements';
+import type { ColumnDefinition, DataBaseConfig } from '../annotations/database-config';
+import type { ISaveAbleObject } from '../interface/mapping';
 type ConnectionLog = {
     timestamp: number;
     connectionTs?: number;
@@ -157,14 +159,25 @@ export class PsqlBase implements DataBaseBase {
 
     }
 
-    async sqlquery<T>(queryString: string, params?: Array<any>): Promise<DatabaseResult> {
+    async sqlquery<T>(cfg: DataBaseConfig<T>, queryString: string, params?: Array<any>): Promise<DatabaseResult> {
         queryString = this.postgresifyQuery(queryString);
         try {
             const result = await this.query(connection => connection.query(queryString, params))
 
+            let insertId: null | BigInt = null
+
+            if (queryString.startsWith("INSERT") && result.rows[0]?.[cfg.modelPrimary] !== undefined) {
+                insertId = result.rows[0]?.[cfg.modelPrimary]
+
+                const colDef: ColumnDefinition | undefined = cfg.columns[cfg.modelPrimary];
+                if (colDef?.primaryType !== "custom") {
+                    insertId = BigInt(result.rows[0]?.id)
+                }
+            }
+
             return {
                 affectedRows: result.rowCount!,
-                insertId: queryString.startsWith("INSERT") && result.rows[0]?.id ? BigInt(result.rows[0]?.id) : null!,
+                insertId: insertId!,
                 warningStatus: 0
 
             }

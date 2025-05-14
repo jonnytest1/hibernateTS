@@ -6,7 +6,7 @@ import { RecursiveMapping } from './recursive-mapping';
 export class TestModel {
 
 	@primary({ strategy: 'custom' })
-	id: number
+	id: string
 
 	@column()
 	col2
@@ -34,6 +34,9 @@ export class TestModel {
 
 	@mapping(Mappings.OneToMany, RecursiveMapping, "testmodelRef")
 	recursiveMappings: Array<RecursiveMapping> = []
+
+	@mapping(Mappings.OneToOne, TestModel)
+	parent: TestModel
 
 	@column({
 		type: "date"

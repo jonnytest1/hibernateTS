@@ -1,5 +1,6 @@
 import type { Constraint } from '../annotations/database-annotation';
 import type { ColumnDefinition, DataBaseConfig } from '../annotations/database-config';
+import type { ISaveAbleObject } from '../interface/mapping';
 
 export interface DatabaseResult {
     insertId: BigInt,
@@ -12,7 +13,7 @@ export interface DatabaseResult {
 
 export type DataBaseBase = {
     constructor: DataBaseBaseStatic
-    sqlquery<T>(queryString: string, params?: Array<any>): Promise<DatabaseResult>
+    sqlquery<T>(cfg: DataBaseConfig<ISaveAbleObject>, queryString: string, params?: Array<any>): Promise<DatabaseResult>
     end(): Promise<void>;
 
     selectQuery<T>(queryString: string, params?: Array<any>): Promise<Array<T>>

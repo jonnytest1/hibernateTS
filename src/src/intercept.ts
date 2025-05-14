@@ -91,7 +91,7 @@ export function intercept<T>(object: ISaveAbleObject, opts: InterceptParams = {}
 						pushUpdate(object, savingPr.then(async primaryKey => {
 							const sql = "UPDATE `" + db.table + "` SET " + column.dbTableName + " = ? WHERE " + db.modelPrimary + " = ?";
 
-							const updateResult = await withMariaDbPool(pool => (opts.db ?? pool).sqlquery(sql, [primaryKey[0], getId(object)]))
+							const updateResult = await withMariaDbPool(pool => (opts.db ?? pool).sqlquery(db, sql, [primaryKey[0], getId(object)]))
 						}))
 
 					} else {

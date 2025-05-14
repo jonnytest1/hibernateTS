@@ -20,6 +20,9 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 	const db = getDBConfig(object);
 
 	const columnDef = db.columns[key];
+	if (!columnDef) {
+		return 0
+	}
 	const mapping = columnDef?.mapping;
 
 	if (columnDef?.opts && "transformations" in columnDef.opts) {
@@ -47,7 +50,7 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 			if (mapping.type == Mappings.OneToMany) {
 				if (value instanceof Array) {
 					const childDb = getDBConfig(mapping.target)
-					const deleteResult = await dbBase.sqlquery("DELETE FROM `" + childDb.table + "` WHERE " + mapping.column.dbTableName + " = ?", [getId(object)])
+					const deleteResult = await dbBase.sqlquery(childDb, "DELETE FROM `" + childDb.table + "` WHERE " + mapping.column.dbTableName + " = ?", [getId(object)])
 					if (value.length > 0) {
 						const insertResults = await save(value.map(childValue => {
 							childValue[mapping.column.modelName] = getId(object);
@@ -61,7 +64,7 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 				}
 			} else if (mapping.type == Mappings.OneToOne) {
 				const childDb = getDBConfig(mapping.target)
-				const deleteResult = await dbBase.sqlquery("DELETE FROM `" + childDb.table + "` WHERE " + mapping.column.dbTableName + " = ?", [getId(object)])
+				const deleteResult = await dbBase.sqlquery(childDb, "DELETE FROM `" + childDb.table + "` WHERE " + mapping.column.dbTableName + " = ?", [getId(object)])
 				value[mapping.column.modelName] = getId(object);
 				const insertResults = await save(value, { db: dbBase })
 				return insertResults[0]
@@ -70,7 +73,7 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 			}
 		} else {
 			const sql = "UPDATE `" + db.table + "` SET " + key + " = ? WHERE " + db.modelPrimary + " = ?";
-			const updateResult = await dbBase.sqlquery(sql, [value, getId(object)]);
+			const updateResult = await dbBase.sqlquery(db, sql, [value, getId(object)]);
 			return updateResult.affectedRows
 		}
 	} finally {

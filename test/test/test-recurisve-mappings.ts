@@ -1,23 +1,23 @@
 
-import { load, save } from '../../src/src';
+import { load, save, type DataBaseBase } from '../../src/src';
 import { SqlCondition } from '../../src/src/sql-condition';
 import { RecursiveMapping } from '../testmodels/recursive-mapping';
 import { TestModel } from '../testmodels/test-model';
 import { calldWithCount } from './utils';
 
-export async function testRecursiveMappings() {
+export async function testRecursiveMappings(pool: DataBaseBase) {
 
 
     const testModel = new TestModel("test123", "123");
     const recursiveBoundTestModel = new TestModel("recurisve", "rec");
-
+    testModel.parent = new TestModel("p1", "567")
     const recursiveMApping = new RecursiveMapping();
     recursiveMApping.backwardsMapping = recursiveBoundTestModel;
     testModel.recursiveMappings.push(recursiveMApping)
 
-    await save(testModel);
+    await save(testModel, { db: pool });
 
-    const laodedModel = await load(TestModel, m => m.col2 = "123", undefined, { first: true, deep: true });
+    const laodedModel = await load(TestModel, m => m.col2 = "123", undefined, { first: true, deep: true, db: pool });
 
     if (laodedModel.recursiveMappings.length !== 1) {
         throw "didnt load recursiveMapping"
@@ -28,7 +28,9 @@ export async function testRecursiveMappings() {
     if (laodedModel.recursiveMappings[0].backwardsMapping.col2 != "rec") {
         throw "didnt load correct backwardsmapping"
     }
-
+    if (laodedModel.parent?.id !== "p1") {
+        throw "didnt load recursive self referential model"
+    }
 
     const loadingDepthsTestModel = new TestModel("test1234", "1234");
     const loadingDepthsRecursiveMapping = new RecursiveMapping();
@@ -55,7 +57,7 @@ export async function testRecursiveMappings() {
     loadingDepthsRecursiveMapping3.backwardsMapping = loadingDepthsTestModel;
     loadingDepthsTestModel.recursiveMappings.push(loadingDepthsRecursiveMapping3)
 
-    await save([loadingDepthsTestModel, otherTestModel])
+    await save([loadingDepthsTestModel, otherTestModel], { db: pool })
 
     const loads = await Promise.all([
         load(TestModel, m => m.col2 = loadingDepthsTestModel.col2, undefined, {
@@ -65,7 +67,7 @@ export async function testRecursiveMappings() {
                     filter: "TRUE=TRUE",
                     depths: 4
                 }
-            }, first: true
+            }, first: true, db: pool
         }),
         load(TestModel, m => m.col2 = loadingDepthsTestModel.col2, undefined, {
             deep: {
@@ -74,7 +76,7 @@ export async function testRecursiveMappings() {
                     filter: SqlCondition.ALL,
                     depths: 4
                 }
-            }, first: true
+            }, first: true, db: pool
         })
     ])
     for (const loadedData of loads) {

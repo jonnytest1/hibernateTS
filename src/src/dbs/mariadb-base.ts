@@ -2,6 +2,8 @@ import * as mariadb from "mariadb";
 import { Exception } from '../exception';
 import type { DataBaseBase, DataBaseBaseStatic, DatabaseResult, QueryStrings } from './database-base';
 import { staticImplements } from '../annotations/static-implements';
+import type { DataBaseConfig } from '../annotations/database-config';
+import type { ISaveAbleObject } from '../interface/mapping';
 
 
 
@@ -124,7 +126,7 @@ export class MariaDbBase implements DataBaseBase {
 
 	}
 
-	async sqlquery<T>(queryString: string, params: Array<any> = []): Promise<DatabaseResult> {
+	async sqlquery<T>(cfg: DataBaseConfig<ISaveAbleObject>, queryString: string, params: Array<any> = []): Promise<DatabaseResult> {
 		try {
 			return await this.query(connection => connection.query(queryString, params))
 		} catch (e) {

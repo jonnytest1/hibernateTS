@@ -1,7 +1,7 @@
-import { primary, table } from 'hibernatets';
-import { mapping, Mappings } from '../../src/src';
-import { TestModelRef } from './test-model';
 
+import { mapping, Mappings, primary, table } from '../../src/src';
+import { TestModelRef } from './test-model';
+// from 'hibernatets';
 @table()
 export class RecursiveMapping {
 
@@ -11,4 +11,5 @@ export class RecursiveMapping {
     @mapping(Mappings.OneToOne, import("./test-model").then(i => i.TestModel))
 
     backwardsMapping: TestModelRef
+
 }

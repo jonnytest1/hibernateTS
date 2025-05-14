@@ -19,7 +19,7 @@ export class ClWithMApping {
 	mappingcreate: MappingCreate
 
 	@column()
-	idKey
+	idKey: string
 
 	constructor(idKey?: string) {
 		if (idKey) {

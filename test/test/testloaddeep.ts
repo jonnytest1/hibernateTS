@@ -2,6 +2,7 @@ import { load, queries, save } from '../../src/src';
 import { TestModel } from '../testmodels/test-model';
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
 import { MappingCreate } from '../testmodels/mappingcreate';
+import { addArrayItem } from '../../src/src/save';
 
 export async function testloaddeep() {
 
@@ -13,6 +14,7 @@ export async function testloaddeep() {
     cl.test.push(new TestModel("dfgdfg", "dfgdfgdh"))
     cl.test2 = new TestModel("dfgfg", "gjdj")
     await queries(cl);
+
 
     const model = await load(ClWithMApping, m => m.id = cl.id, [], { first: true, deep: true })
 

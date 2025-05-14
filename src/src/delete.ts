@@ -102,7 +102,7 @@ export async function deleteFnc<T>(descriptor: ConstructorClass<T> | any, primar
 			return ` ${db.modelPrimary} = ? `
 		}).join(' \nOR ');
 
-		const result = await pool.sqlquery(sql, dletionId);
+		const result = await pool.sqlquery(db, sql, dletionId);
 		deleteCount += result.affectedRows;
 		return deleteCount;
 	} finally {

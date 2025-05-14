@@ -221,7 +221,7 @@ async function alterTable(dbConfig: DataBaseConfig, previousData: {
     sql = sql.substr(0, sql.length - 3) + ";"
     if (needsAlter) {
         console.log(sql);
-        await db.sqlquery(sql);
+        await db.sqlquery(dbConfig, sql);
     }
 }
 
@@ -250,7 +250,7 @@ async function createTable(dbConfig: DataBaseConfig, columnData: Array<ColumnQue
 
     sql += ") COLLATE='utf8mb4_general_ci' ENGINE=InnoDB ;"
     console.log(sql);
-    await db.sqlquery(sql);
+    await db.sqlquery(dbConfig, sql);
 
 }
 

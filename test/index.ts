@@ -47,11 +47,11 @@ let mariadDbTests = false;
 			testloadbyparam, testDbTransformer]) {
 			try {
 				await Promise.all([
-					native.sqlquery("TRUNCATE TABLE `testmodel`;"),
-					native.sqlquery("TRUNCATE TABLE `clwithmapping`;"),
-					native.sqlquery("TRUNCATE TABLE `mappingcreate`;"),
-					native.sqlquery("TRUNCATE TABLE `recursivemapping`;"),
-					native.sqlquery("TRUNCATE TABLE `attributeitem`;")
+					native.sqlquery(null, "TRUNCATE TABLE `testmodel`;"),
+					native.sqlquery(null, "TRUNCATE TABLE `clwithmapping`;"),
+					native.sqlquery(null, "TRUNCATE TABLE `mappingcreate`;"),
+					native.sqlquery(null, "TRUNCATE TABLE `recursivemapping`;"),
+					native.sqlquery(null, "TRUNCATE TABLE `attributeitem`;")
 
 				])
 			} catch (e) {
@@ -87,18 +87,18 @@ let mariadDbTests = false;
 		modelDb: "public"
 	})
 
-	await postgresBase.sqlquery("TRUNCATE TABLE `testmodel`;");
-	for (let testFnc of [testDuplicate, testlaodCalls, testloaddeep, testMAp, testRecursiveMappings, testsave, testmapping, ,
+	await postgresBase.sqlquery(null, "TRUNCATE TABLE `testmodel`;");
+	for (let testFnc of [testRecursiveMappings, testDuplicate, testlaodCalls, testloaddeep, testMAp, testsave, testmapping, ,
 		testloadbyparam, testDbTransformer]) {
 		try {
 			await Promise.all([
-				postgresBase.sqlquery("TRUNCATE TABLE `testmodel`;"),
-				postgresBase.sqlquery("TRUNCATE TABLE `clwithmapping`;"),
-				postgresBase.sqlquery("TRUNCATE TABLE `mappingcreate`;"),
-				postgresBase.sqlquery("TRUNCATE TABLE `recursivemapping`;"),
-				postgresBase.sqlquery("TRUNCATE TABLE `attributeitem`;"),
-				postgresBase.sqlquery("TRUNCATE TABLE `testmodelnoprimary`;"),
-				postgresBase.sqlquery("TRUNCATE TABLE `testmodelnoprimaryandunique`;")
+				postgresBase.sqlquery(null, "TRUNCATE TABLE `testmodel`;"),
+				postgresBase.sqlquery(null, "TRUNCATE TABLE `clwithmapping`;"),
+				postgresBase.sqlquery(null, "TRUNCATE TABLE `mappingcreate`;"),
+				postgresBase.sqlquery(null, "TRUNCATE TABLE `recursivemapping`;"),
+				postgresBase.sqlquery(null, "TRUNCATE TABLE `attributeitem`;"),
+				postgresBase.sqlquery(null, "TRUNCATE TABLE `testmodelnoprimary`;"),
+				postgresBase.sqlquery(null, "TRUNCATE TABLE `testmodelnoprimaryandunique`;")
 
 			])
 		} catch (e) {
