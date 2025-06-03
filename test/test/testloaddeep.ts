@@ -1,20 +1,19 @@
-import { load, queries, save } from '../../src/src';
+import { load, MariaDbBase, queries, save, SqlCondition } from '../../src/src';
 import { TestModel } from '../testmodels/test-model';
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
 import { MappingCreate } from '../testmodels/mappingcreate';
 import { addArrayItem } from '../../src/src/save';
 
 export async function testloaddeep() {
-
+    const pool = new MariaDbBase()
 
     const saved = await save(new ClWithMApping())
 
-    const cl = await load(ClWithMApping, saved[0], [], { interceptArrayFunctions: true })
+    const cl = await load(ClWithMApping, saved[0], [], { interceptArrayFunctions: true, db: pool })
     cl.test.push(new TestModel("asd", "dfgdfgdfgsfrse"))
     cl.test.push(new TestModel("dfgdfg", "dfgdfgdh"))
     cl.test2 = new TestModel("dfgfg", "gjdj")
     await queries(cl);
-
 
     const model = await load(ClWithMApping, m => m.id = cl.id, [], { first: true, deep: true })
 
@@ -88,4 +87,11 @@ export async function testloaddeep() {
         || typeof laodedMAppings[1].mappingcreate != "object") {
         throw "didnt load oneToOne"
     }
+    debugger
+
+    const testModels = await load(TestModel, SqlCondition.ALL, [], {
+        skipFields: ["col2"]
+    })
+
+    debugger
 }

@@ -11,7 +11,11 @@ export const mySqlDbQueryStrings: QueryStrings = {
     },
     uniqueConstraintSql(constraint, name, context) {
         name ??= mySqlDbQueryStrings.constraintName(constraint, context)
-        const columnsStr = constraint.columns.map(c => `\`${c}\``).join(",")
+        const columnsStr = constraint.columns.map(c => {
+            const columnDef = context.columns[c]
+            debugger
+            return `\`${c}\``;
+        }).join(",")
         return `UNIQUE INDEX \`${name}\` (${columnsStr})`
     },
     duplicateKeyUpdate(keys, context) {

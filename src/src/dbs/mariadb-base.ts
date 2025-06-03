@@ -23,7 +23,14 @@ export const mariaDbQueryStrings: QueryStrings = {
 	},
 	uniqueConstraintSql(constraint, name, context) {
 		name ??= mariaDbQueryStrings.constraintName(constraint, context)
-		const columnsStr = constraint.columns.map(c => `\`${c}\``).join(",")
+		let size = 0;
+		const columnsStr = constraint.columns.map(c => {
+			const columnDef = context.columns[c]
+			if (columnDef?.opts?.type === "text") {
+				return `\`${c}\`(128)`;
+			}
+			return `\`${c}\``;
+		}).join(",")
 		return `UNIQUE INDEX \`${name}\` (${columnsStr})`
 	},
 	duplicateKeyUpdate(keys, context) {

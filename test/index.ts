@@ -25,14 +25,14 @@ config()
 const native = new MariaDbBase(undefined, 20);
 const infoSChemaBase = new MariaDbBase("information_schema");
 
-let mariadDbTests = false;
+let mariadDbTests = true;
 (async () => {
 	if (mariadDbTests) {
 		//await native.sqlquery("DROP TABLE `example`;")
 		//await native.sqlquery("DROP TABLE `examplemapping`;")
 		await native.selectQuery<any>("ALTER TABLE `recursivemapping` DROP COLUMN IF EXISTS `testmodelRef`")
 
-		await updateDatabase(`${__dirname}/testmodels`)
+		await updateDatabase(`${__dirname}/testmodels`,)
 		const columns = await infoSChemaBase.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["testmodel"])
 		const recursivemappingColumns = await infoSChemaBase.selectQuery<any>("SELECT * FROM `COLUMNS` WHERE TABLE_NAME = ? ", ["recursivemapping"])
 		infoSChemaBase.end()
@@ -43,7 +43,7 @@ let mariadDbTests = false;
 		if (!recursivemappingColumns.some(c => c.COLUMN_NAME == "testmodelRef")) {
 			throw "didnt create inverse mapp column in target table"
 		}
-		for (let testFnc of [testlaodCalls, testloaddeep, testMAp, testRecursiveMappings, testsave, testmapping, testDuplicate,
+		for (let testFnc of [testloaddeep, testlaodCalls, testMAp, testRecursiveMappings, testsave, testmapping, testDuplicate,
 			testloadbyparam, testDbTransformer]) {
 			try {
 				await Promise.all([

@@ -7,6 +7,7 @@ import { ColumnOption } from './annotations/database-annotation';
 import { ExtendedMap } from './extended-map/extended-map';
 import type { DataBaseBase } from './dbs/database-base';
 import { pushUpdate } from './update';
+import { error } from 'console';
 
 interface SaveOptions<T> {
 	/**
@@ -182,7 +183,8 @@ type ArrayType<T, K extends keyof T> = T[K] extends Array<infer U> ? U : never
 type AnyToNever<T, K extends keyof T> = T[K] extends Array<infer U> ? U : never
 
 export function addArrayItem<T extends ISaveAbleObject, K extends ArrayKeys<T>>(parent: T, key: K, opts: Array<ArrayType<T, K> & ISaveAbleObject> | AddArrayOpts<ArrayType<T, K> & ISaveAbleObject>) {
-	const mapping = getDBConfig(parent).columns[key]?.mapping;
+	const parentConfig = getDBConfig(parent);
+	const mapping = parentConfig.columns[key]?.mapping;
 	if (!mapping) {
 		throw new Error("no mapping found for object")
 	}
@@ -200,5 +202,9 @@ export function addArrayItem<T extends ISaveAbleObject, K extends ArrayKeys<T>>(
 	items.forEach(item => {
 		item[mapping.column.modelName] = getId(parent)
 	})
-	pushUpdate(parent, save(items, saveOpts));
+	pushUpdate(parent, save(items, saveOpts).catch(e => {
+		const err = new Error(`exception while adding array item for '${parentConfig.table}' to key '${key.toString()}'`);
+		err.stack += `\ncaused-by:\n${e.stack}\n`
+		throw err
+	}));
 }

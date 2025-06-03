@@ -12,6 +12,8 @@ import { objectValues } from './utils/type';
 
 export interface LoadOptions<T> extends InterceptParams {
 	deep?: boolean | Array<string | SqlCondition> | { [key: string]: string | SqlCondition | { filter: string | SqlCondition, depths: number } },
+
+	skipFields?: Array<string>
 	first?: boolean,
 	idOnNonDeepOneToOne?: boolean
 
@@ -75,6 +77,18 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 	} else {
 		filter = primaryKeyOrFilter;
 	}
+
+	if (options?.skipFields?.length) {
+		debugger
+		const fields = objectValues(db.columns)
+			.filter(c => c?.mapping?.type !== Mappings.OneToMany)
+			.map(c => c?.dbTableName)
+			.filter(c => c && !options.skipFields?.includes(c))
+			.map(c => `\`${c}\``)
+			.join(",")
+		sql = `SELECT ${fields} FROM \`${db.table}\` `;
+	}
+
 
 	if (typeof filter != "undefined") {
 		sql += "WHERE ";
