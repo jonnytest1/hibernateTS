@@ -1,5 +1,6 @@
-import { column, primary } from '../annotations/database-annotation'
+import { column, primary, table } from '../annotations/database-annotation'
 
+@table()
 export class ExtendedMapItem<K extends string = string, T = any> {
 
     @primary()

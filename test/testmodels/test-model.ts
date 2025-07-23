@@ -1,7 +1,7 @@
-import { column, mapping, Mappings, primary } from '../../src/src';
+import { column, mapping, Mappings, primary, table } from '../../src/src';
 import { MappingCreate } from './mappingcreate';
-import { table } from "hibernatets"
 import { RecursiveMapping } from './recursive-mapping';
+//hibernatets
 @table()
 export class TestModel {
 

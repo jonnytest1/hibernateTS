@@ -1,5 +1,5 @@
 
-import { column, mapping, Mappings, primary, table } from '../../src/src';
+import { column, mapping, Mappings, primary, reference, table } from '../../src/src';
 import { TestModel } from './test-model';
 import { MappingCreate } from './mappingcreate';
 // from "hibernatets"
@@ -20,6 +20,9 @@ export class ClWithMApping {
 
 	@column()
 	idKey: string
+
+	@reference()
+	references: Record<keyof this, number>
 
 	constructor(idKey?: string) {
 		if (idKey) {

@@ -2,7 +2,7 @@
 import { ColumnDefinition, DataBaseConfig, PrimaryType } from './database-config';
 import { Mappings } from '../interface/mapping-types';
 import { getDBConfig } from '../utils';
-import { ISaveAbleObject, ConstructorClass } from '../interface/mapping';
+import { ISaveAbleObject, ConstructorClass, database } from '../interface/mapping';
 
 
 export interface DBColumn {
@@ -19,8 +19,8 @@ export interface DBColumn {
 
 
 function checkPrototype(constructor: any) {
-	if (constructor.prototype.database == undefined) {
-		constructor.prototype.database = new DataBaseConfig(constructor);
+	if (constructor.prototype[database] == undefined) {
+		constructor.prototype[database] = new DataBaseConfig(constructor);
 	}
 }
 
@@ -122,6 +122,7 @@ export function primary(options: primaryOptions = {}): (...args) => void {
 		column(options)(target, propertyKey, descriptor);
 
 		const dbConfig = getDBConfig(target.constructor);
+
 		dbConfig.modelPrimary = propertyKey;
 		dbConfig.columns[propertyKey].primaryType = options.strategy
 
@@ -155,10 +156,24 @@ export interface OneToManyMappingOptions extends MappingOptions {
 }
 
 
+export function reference(): (target: ISaveAbleObject, propertyKey: string, descriptor?: PropertyDescriptor) => any {
+	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
+		checkPrototype(target.constructor)
+		const dbConfig = getDBConfig(target.constructor);
+		dbConfig.referenceKey = propertyKey as never;
+	}
+}
+
+
 export function mapping<T>(type: Mappings.OneToOne, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options?: MappingOptions)
 export function mapping<T>(type: Mappings.OneToMany, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key: string | ((t: T) => any), options?: OneToManyMappingOptions)
 export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Promise<ConstructorClass<T>>, key?: string | ((t: T) => any), options: MappingOptions = {}): (...args) => any {
-
+	let stack = ""
+	try {
+		throw new Error("database-creation")
+	} catch (e) {
+		stack = e.stack
+	}
 	return function (target: ISaveAbleObject, propertyKey: string, descriptor: PropertyDescriptor) {
 		if (model == undefined) {
 			console.error(`couldnt get instance for key ${propertyKey} in class ${target.constructor.name} 
@@ -168,10 +183,13 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Pr
 			`)
 			throw new Error()
 		}
+
+
 		setTimeout(async () => {
 			try {
 
 				let m: ConstructorClass<T> = await model;
+				DataBaseConfig.CREATION_STACK = stack
 
 				const mappingModel = getDBConfig(m);
 				let columnKey: string = getColumnKey(mappingModel, m, key)
@@ -203,6 +221,7 @@ export function mapping<T = any>(type: Mappings, model: ConstructorClass<T> | Pr
 					targetColumn: propertyKey,
 					inverseMappingType: type
 				})
+				DataBaseConfig.CREATION_STACK = undefined
 			} catch (e) {
 				console.error(e)
 			}

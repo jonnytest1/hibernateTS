@@ -80,6 +80,9 @@ export async function updateDatabase(modelRootPath: string, opts: UpdateOpts = {
                 .map(async dbClass => {
 
                     const dbConfig = getDBConfig(dbClass);
+                    if (!dbConfig.table) {
+                        console.error("missing table annotation for " + dbConfig.stack)
+                    }
                     if (!tableSet.has(dbConfig.table)) {
                         await createTable(dbConfig, columnData[dbConfig.table], tablesDb!)
                     } else {

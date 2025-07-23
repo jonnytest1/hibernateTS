@@ -23,6 +23,7 @@ export interface ColumnDefinition<K = string> {
 
 export class DataBaseConfig<T = any> {
 
+	static CREATION_STACK?: string
 	modelPrimary: string;
 	table: string;
 	updates: Promise<number>[];
@@ -31,9 +32,18 @@ export class DataBaseConfig<T = any> {
 
 	options: TableOptions<T>
 
+	referenceKey: keyof T & string
+
+	stack: string
+
 	constructor(private tableConstructor: new () => T) {
 		this.updates = []
 		this.columns = {}
+		try {
+			throw new Error("database-creation")
+		} catch (e) {
+			this.stack = DataBaseConfig.CREATION_STACK ?? e.stack.split("\n").slice(4).join("\n")
+		}
 	}
 
 

@@ -15,7 +15,10 @@ export interface LoadOptions<T> extends InterceptParams {
 
 	skipFields?: Array<string>
 	first?: boolean,
+
+
 	idOnNonDeepOneToOne?: boolean
+	withShallowReferences?: boolean
 
 	db?: DataBaseBase
 
@@ -29,6 +32,7 @@ export interface LoadParams<T, F = Filter<T>, O = LoadOptions<T>> {
 	params?: Array<string | number> | string
 
 	options?: O
+
 }
 
 export type SqlParameter = string | number
@@ -79,7 +83,6 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 	}
 
 	if (options?.skipFields?.length) {
-		debugger
 		const fields = objectValues(db.columns)
 			.filter(c => c?.mapping?.type !== Mappings.OneToMany)
 			.map(c => c?.dbTableName)
@@ -220,10 +223,25 @@ export async function load<T>(findClass: ConstructorClass<T>, primaryKeyOrFilter
 						} else {
 							throw new Error("missing mapping")
 						}
-					} else if (mapping.type == Mappings.OneToOne && !options.idOnNonDeepOneToOne) {
-						//reset key when not loaded
-						result[columnName] = null;
+					} else if (mapping.type == Mappings.OneToOne) {
+						if (options.withShallowReferences && db.referenceKey) {
+
+							const referenceObject = {
+								...result[db.referenceKey],
+								[columnName]: result[columnName]
+							}
+
+
+							result[db.referenceKey] = referenceObject as never
+						}
+						if (!options.idOnNonDeepOneToOne) {
+							//reset key when not loaded
+							result[columnName] = null;
+						}
+
 					}
+
+
 				}
 			}))
 

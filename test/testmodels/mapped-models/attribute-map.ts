@@ -1,6 +1,6 @@
 
-import { primary, table } from 'hibernatets';
-import { ExtendedMapItem, mapping, Mappings } from '../../../src/src';
+// hibernatets
+import { ExtendedMapItem, mapping, Mappings, primary, table } from '../../../src/src';
 import { ExtendedMap } from '../../../src/src/extended-map/extended-map';
 import { AttributeItem } from './attribute-item';
 
@@ -14,7 +14,6 @@ export class AttributeHolder {
     attributes = new ExtendedMap(AttributeItem, [])
 
 }
-
 
 
 interface NewType {

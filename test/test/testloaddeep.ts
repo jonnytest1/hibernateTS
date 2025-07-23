@@ -87,11 +87,19 @@ export async function testloaddeep() {
         || typeof laodedMAppings[1].mappingcreate != "object") {
         throw "didnt load oneToOne"
     }
-    debugger
 
     const testModels = await load(TestModel, SqlCondition.ALL, [], {
         skipFields: ["col2"]
     })
 
+    debugger
+
+    const laodedMAppingsShallow = await load(ClWithMApping, "idKey LIKE '%_%'", undefined, {
+        withShallowReferences: true,
+        deep: false
+    })
+    if (!laodedMAppingsShallow[0].references?.mappingcreate) {
+        throw "didnt load refs"
+    }
     debugger
 }

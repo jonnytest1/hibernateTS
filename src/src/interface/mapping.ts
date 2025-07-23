@@ -3,6 +3,8 @@ import { MappingOptions } from '../annotations/database-annotation';
 import { ColumnDefinition, DataBaseConfig } from '../annotations/database-config';
 
 
+
+export const database = Symbol("databaseref");
 export interface Mapping<T extends Mappings> {
 	target: ConstructorClass<any>;
 	column: ColumnDefinition;
@@ -15,7 +17,7 @@ export interface Mapping<T extends Mappings> {
 export interface ISaveAbleObject {
 	constructor: {
 		prototype: {
-			database: DataBaseConfig
+			[database]: DataBaseConfig
 		}
 		name?: string
 	}
