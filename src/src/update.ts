@@ -72,7 +72,7 @@ export async function update(object: ISaveAbleObject, key: keyof typeof object, 
 				throw new Error("missing implementation differnent mapping")
 			}
 		} else {
-			const sql = "UPDATE `" + db.table + "` SET " + key + " = ? WHERE " + db.modelPrimary + " = ?";
+			const sql = "UPDATE `" + db.table + "` SET `" + key + "` = ? WHERE " + db.modelPrimary + " = ?";
 			const updateResult = await dbBase.sqlquery(db, sql, [value, getId(object)]);
 			return updateResult.affectedRows
 		}

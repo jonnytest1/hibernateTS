@@ -14,6 +14,9 @@ export class TestModel {
 	@column({ size: "large" })
 	description
 
+	// reserved key
+	@column({ size: "large" })
+	schema
 
 	@column()
 	randomtext: string

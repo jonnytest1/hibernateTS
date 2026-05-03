@@ -1,6 +1,6 @@
 {
   "name": "hibernatets",
-  "version": "2.0.109",
+  "version": "2.0.110",
   "description": "hibernate clone for typescript",
   "main": "index.js",
   "scripts": {

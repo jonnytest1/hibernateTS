@@ -4,7 +4,7 @@ import { TestModel } from '../testmodels/test-model';
 import { ClWithMApping } from '../testmodels/cl-with-mapping';
 import { MappingCreate } from '../testmodels/mappingcreate';
 
-export async function testsave() {
+export async function testsave(pool) {
 
     const obj = new ClWithMApping("savetest");
     obj.test2 = new TestModel("abcee", "idontcare")
@@ -14,7 +14,7 @@ export async function testsave() {
     await save(obj);
 
 
-    const laodedObj = await load(ClWithMApping, obj.id, [], { deep: true, interceptArrayFunctions: true });
+    const laodedObj = await load(ClWithMApping, obj.id, [], { deep: true, interceptArrayFunctions: true, db: pool });
 
     if (!laodedObj.test2) {
         throw "didnt save or load mapping"
@@ -34,7 +34,7 @@ export async function testsave() {
     additionalModel.mappinglevel2 = new MappingCreate()
     additionalModel.mappinglevel2.value = "2ndlevel val"
     laodedObj.test.push(additionalModel)
-
+    laodedObj.test2.schema = "test"
     await queries(laodedObj);
 
     const afterMultilevelPush = await load(ClWithMApping, laodedObj.id, [], { deep: true })

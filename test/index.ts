@@ -43,7 +43,7 @@ let mariadDbTests = true;
 		if (!recursivemappingColumns.some(c => c.COLUMN_NAME == "testmodelRef")) {
 			throw "didnt create inverse mapp column in target table"
 		}
-		for (let testFnc of [testloaddeep, testlaodCalls, testMAp, testRecursiveMappings, testsave, testmapping, testDuplicate,
+		for (let testFnc of [testsave, testloaddeep, testlaodCalls, testMAp, testRecursiveMappings, testmapping, testDuplicate,
 			testloadbyparam, testDbTransformer]) {
 			try {
 				await Promise.all([
